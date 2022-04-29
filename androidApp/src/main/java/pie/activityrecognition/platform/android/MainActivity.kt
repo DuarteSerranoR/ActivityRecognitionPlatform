@@ -25,8 +25,14 @@ class MainActivity : AppCompatActivity() {
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.SEND_SMS),0)
             }
 
-            val smsAct = SMSActivity(this.applicationContext)
-            smsAct.sendSMS("934786267", "Testing")
+            //if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(this, "com.google.android.gms.permission.ACTIVITY_RECOGNITION") != PackageManager.PERMISSION_GRANTED) {
+                    //ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACTIVITY_RECOGNITION),1)
+                    ActivityCompat.requestPermissions(this, arrayOf("com.google.android.gms.permission.ACTIVITY_RECOGNITION"),1)
+            }
+
+            //val smsAct = SMSActivity(this.applicationContext)
+            //smsAct.sendSMS("934786267", "Testing")
 
             val transitions = mutableListOf<ActivityTransition>()
 
@@ -35,6 +41,7 @@ class MainActivity : AppCompatActivity() {
                     .setActivityType(DetectedActivity.TILTING)
                     .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
                     .build()
+
             /*
             transitions +=
                 ActivityTransition.Builder()

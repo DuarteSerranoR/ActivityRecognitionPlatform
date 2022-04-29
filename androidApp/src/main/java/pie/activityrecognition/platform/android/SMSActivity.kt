@@ -7,8 +7,9 @@ import android.telephony.SmsManager
 
 class SMSActivity(c: Context) {
 
-    private val context = c
-    private val smsManager = context.getSystemService(SmsManager::class.java)
+    private val context: Context = c
+    //private val smsManager: SmsManager = context.getSystemService(SmsManager::class.java)
+    private val smsManager: SmsManager = SmsManager.getDefault() // Deprecated but the getSystemService was returning null
 
     fun sendSMS(phoneNumber: String, message: String) {
         val sentPI: PendingIntent = PendingIntent.getBroadcast(this.context, 0, Intent("SMS_SENT"), 0)
