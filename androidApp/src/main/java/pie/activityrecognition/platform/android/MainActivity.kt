@@ -6,8 +6,8 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import com.google.android.gms.location.*
 import java.lang.Exception
+import pie.activityrecognition.platform.android.SensorService
 
 
 // Alternative lower level Sensor class from Kotlin instead of google's
@@ -31,30 +31,9 @@ class MainActivity : AppCompatActivity() {
                     ActivityCompat.requestPermissions(this, arrayOf("com.google.android.gms.permission.ACTIVITY_RECOGNITION"),1)
             }
 
-            //val smsAct = SMSActivity(this.applicationContext)
-            //smsAct.sendSMS("934786267", "Testing")
+            val a = SensorService()
 
-            val transitions = mutableListOf<ActivityTransition>()
 
-            transitions +=
-                ActivityTransition.Builder()
-                    .setActivityType(DetectedActivity.TILTING)
-                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                    .build()
-
-            /*
-            transitions +=
-                ActivityTransition.Builder()
-                    .setActivityType(DetectedActivity.RUNNING)
-                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                    .build()
-
-            transitions +=
-                ActivityTransition.Builder()
-                    .setActivityType(DetectedActivity.WALKING)
-                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                    .build()
-            */
         } catch (e: Exception) {
             println(e)
         }
