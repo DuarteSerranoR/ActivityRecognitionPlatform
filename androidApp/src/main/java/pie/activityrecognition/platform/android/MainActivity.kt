@@ -1,7 +1,10 @@
 package pie.activityrecognition.platform.android
 
+import android.app.PendingIntent
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.telephony.SmsManager
 import pie.activityrecognition.platform.Greeting
 import android.widget.TextView
 import com.google.android.gms.location.*
@@ -9,6 +12,10 @@ import com.google.android.gms.location.*
 fun greet(): String {
     return Greeting().greeting()
 }
+
+
+// Alternative lower level Sensor class from Kotlin instead of google's
+// activity recognition API -> https://developer.android.com/reference/kotlin/android/hardware/Sensor
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +45,7 @@ class MainActivity : AppCompatActivity() {
                 .build()
         */
     }
+
 }
 
 
