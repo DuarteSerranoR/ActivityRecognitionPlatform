@@ -52,5 +52,16 @@ android {
     defaultConfig {
         minSdk = 28
         targetSdk = 32
+        externalNativeBuild {
+            cmake {
+                cppFlags += ""
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.18.1"
+        }
     }
 }

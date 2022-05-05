@@ -2,11 +2,14 @@ package pie.activityrecognition.platform.android
 
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -25,16 +28,54 @@ fun stumbles(): String {
 fun falls(): String {
     return Falls().getFalls()
 }
- // TODO - deprecate the google activity recognition api
+
+
+// TODO - deprecate the google activity recognition api
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    companion object commonMain {
+        init {
+            System.loadLibrary("commonMain")
+        }
+        external fun fall_detection_algorithm(accel1: Float, accel2: Float, accel3: Float): Boolean
     }
 
-    override fun onSensorChanged(event: SensorEvent?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    private lateinit var mSensorManager : SensorManager
+    private var mAccelerometer : Sensor ?= null
+    private var resume = false;
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        return
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) { // https://mdpi-res.com/d_attachment/sensors/sensors-15-17827/article_deploy/sensors-15-17827-v2.pdf?version=1438068266
+        if (event != null && resume) {
+            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+            //if (event.sensor.type == Sensor.TYPE_ACCELEROMETER_UNCALIBRATED) {
+                val accelVal = event.values.asList().toString()
+                findViewById<TextView>(R.id.sensor_value).text = "Acceleration: " + accelVal
+                val fell = commonMain.fall_detection_algorithm(event.values[0], event.values[1], event.values[2])
+                print(fell)
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        mSensorManager.unregisterListener(this)
+    }
+
+    fun resumeReading(view: View) {
+        this.resume = true
+    }
+
+    fun pauseReading(view: View) {
+        this.resume = false
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,6 +101,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
             stumbleCounter.text = String.format("Stumble Counter: ", stumbles())
             fallCounter.text = String.format("Stumble Counter: ", falls())
+
+            mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+
+            mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
             //val a = SensorService()
 

@@ -6,31 +6,71 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <Button
+        android:id="@+id/button"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="48dp"
+        android:layout_marginEnd="42dp"
+        android:onClick="resumeReading"
+        android:text="@string/startBtn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/button2"
+        app:layout_constraintTop_toBottomOf="@+id/sensor_value"
+        tools:ignore="DuplicateSpeakableTextCheck" />
+
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="39dp"
+        android:layout_marginTop="48dp"
+        android:layout_marginEnd="32dp"
+        android:onClick="pauseReading"
+        android:text="@string/pauseBtn"
+        android:visibility="visible"
+        app:layout_constraintEnd_toStartOf="@+id/button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sensor_value" />
+
     <TextView
         android:id="@+id/fallCounter"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="127dp"
-        android:layout_marginTop="271dp"
+        android:layout_marginStart="126dp"
+        android:layout_marginTop="21dp"
         android:layout_marginEnd="127dp"
-        android:layout_marginBottom="270dp"
+        android:layout_marginBottom="37dp"
         android:text="@string/loading"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/sensor_value"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/stumbleCounter" />
 
     <TextView
         android:id="@+id/stumbleCounter"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="129dp"
-        android:layout_marginTop="90dp"
-        android:layout_marginEnd="125dp"
-        android:layout_marginBottom="451dp"
+        android:layout_marginStart="126dp"
+        android:layout_marginTop="52dp"
+        android:layout_marginEnd="127dp"
+        android:layout_marginBottom="21dp"
         android:text="@string/loading"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/fallCounter"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/sensor_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="111dp"
+        android:layout_marginTop="26dp"
+        android:layout_marginEnd="120dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/fallCounter" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
