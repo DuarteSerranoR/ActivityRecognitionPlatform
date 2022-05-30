@@ -1,81 +1,68 @@
+
 package pie.activityrecognition.platform.android
 
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import pie.activityrecognition.platform.Falls
-import pie.activityrecognition.platform.Stumbles
+import androidx.lifecycle.ViewModelProvider
 import java.lang.Exception
 
 
 // Alternative lower level Sensor class from Kotlin instead of google's
 // activity recognition API -> https://developer.android.com/reference/kotlin/android/hardware/Sensor
 
-fun stumbles(): String {
-    return Stumbles().getStumbles()
-}
-
-fun falls(): String {
-    return Falls().getFalls()
-}
+class MainActivity: AppCompatActivity() {
 
 
-// TODO - deprecate the google activity recognition api
+    /*
+     * other ideas -> https://www.youtube.com/watch?v=fbj3c0LgXVI&t=97s -> downstairs, jogging, sitting, standing, upstairs, walking, biking
+     *
+     * (accel) running -> pet shakes or runs with you
+     * (accel) walk -> likewise
+     * gravity -> pet is falling and will hit the ground hard. Or, if lighter, it is on an elevator
+     * humidity -> if high for x time, it gets sick.
+     * temperature -> too hot, sweats; too cold, trembles and shakes.
+     * rainy weather with umbrella -> use humidity and pressure sensors. Research (Geography, meteorology).
+     *
+     * seat-belt -> fall detection?
+     * */
 
-class MainActivity : AppCompatActivity(), SensorEventListener {
-    companion object commonMain {
-        init {
-            System.loadLibrary("commonMain")
-        }
-        external fun fall_detection_algorithm(accel1: Float, accel2: Float, accel3: Float): Boolean
+    /*
+     * running
+     * (walking)
+     * gravity 2x
+     * temperature -> too hot, sweats; too cold, trembles and shakes.
+     * rainy weather with umbrella -> use humidity and pressure sensors. Research (Geography, meteorology).
+     * */
+
+    // compare the weather readings, ...., with real meteorology -> gps -> temperature
+    // gps, temperature and dry humidity -> beach
+
+    //private lateinit var sensorsAPI : Intent
+    private lateinit var mViewModel: MainActivityViewModel
+    private var mSensorsService: ActivityRecognitionSensors? = null
+    override fun onStart() {
+        super.onStart()
+
+        mViewModel = ViewModelProvider(this)[MainActivityViewModel::class.java]
+
+        // Start Service
+        val serviceIntent = Intent(this, ActivityRecognitionSensors::class.java)
+        startService(serviceIntent)
+
+        // Bind to Service
+        val serviceBindIntent = Intent(this, ActivityRecognitionSensors::class.java)
+        bindService(serviceBindIntent, mViewModel.getSensorServiceConnection(), Context.BIND_AUTO_CREATE)
+
+        mSensorsService = mViewModel.getBinder().value?.getService()
     }
 
-    private lateinit var mSensorManager : SensorManager
-    private var mAccelerometer : Sensor ?= null
-    private var resume = false;
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        return
-    }
-
-    override fun onSensorChanged(event: SensorEvent?) { // https://mdpi-res.com/d_attachment/sensors/sensors-15-17827/article_deploy/sensors-15-17827-v2.pdf?version=1438068266
-        if (event != null && resume) {
-            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-            //if (event.sensor.type == Sensor.TYPE_ACCELEROMETER_UNCALIBRATED) {
-                val accelVal = event.values.asList().toString()
-                findViewById<TextView>(R.id.sensor_value).text = "Acceleration: " + accelVal
-                val fell = commonMain.fall_detection_algorithm(event.values[0], event.values[1], event.values[2])
-                print(fell)
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        mSensorManager.unregisterListener(this)
-    }
-
-    fun resumeReading(view: View) {
-        this.resume = true
-    }
-
-    fun pauseReading(view: View) {
-        this.resume = false
+    override fun onStop() {
+        super.onStop()
+        unbindService(mViewModel.getSensorServiceConnection())
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,34 +71,119 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         try {
 
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
+            /*if (ActivityCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.SEND_SMS),0)
-            }
+            }*/
 
             //if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED) {
             //if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED) {
-                    //ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACTIVITY_RECOGNITION),1)
+            //ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACTIVITY_RECOGNITION),1)
             //        ActivityCompat.requestPermissions(this, arrayOf("com.google.android.gms.permission.ACTIVITY_RECOGNITION"),1)
             //}
 
-            val stumbleCounter: TextView = findViewById(R.id.stumbleCounter)
-            val fallCounter: TextView = findViewById(R.id.fallCounter)
+
+
+            // Sensors:
+            // start your next activity
+            //startActivity(sensorsAPI)
+
+            //sensorsAPI = Indent(this, ActivityRecognitionSensors::class.java)
+            //startActivity(sensorsAPI)
+            //sensorsAPI = fm.findFragmentByTag("ActivityRecognitionSensors") as ActivityRecognitionSensors
 
 
 
-            stumbleCounter.text = String.format("Stumble Counter: ", stumbles())
-            fallCounter.text = String.format("Stumble Counter: ", falls())
 
-            mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+            // Google's ActivityRecognition API:
+            /*
+            val transitions = mutableListOf<ActivityTransition>()
 
-            mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            // Running
+            transitions +=
+                ActivityTransition.Builder()
+                    .setActivityType(DetectedActivity.RUNNING)
+                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                    .build()
+            transitions +=
+                ActivityTransition.Builder()
+                    .setActivityType(DetectedActivity.RUNNING)
+                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                    .build()
 
-            //val a = SensorService()
+            // Walking
+            transitions +=
+                ActivityTransition.Builder()
+                    .setActivityType(DetectedActivity.WALKING)
+                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
+                    .build()
+            transitions +=
+                ActivityTransition.Builder()
+                    .setActivityType(DetectedActivity.WALKING)
+                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
+                    .build()
 
 
+            val request = ActivityTransitionRequest(transitions)
+
+            // The execution
+
+            ////------
+            val updatedIntent = Intent(applicationContext, MainActivity::class.java)
+            /*.apply {
+            action = NOTIFICATION_ACTION
+            data = differentDeepLink
+        }*/
+            // Because we're passing `FLAG_UPDATE_CURRENT`, this updates
+            // the existing PendingIntent with the changes we made above.
+            val NOTIFICATION_REQUEST_CODE = 200;
+            val googleApiPendingIntent = PendingIntent.getActivity(
+                applicationContext,
+                NOTIFICATION_REQUEST_CODE,
+                updatedIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+            // The PendingIntent has been updated.
+            ////------
+
+            // myPendingIntent is the instance of PendingIntent where the app receives callbacks.
+            val task = ActivityRecognitionClient(this).requestActivityTransitionUpdates(request,
+                TransitionsReceiver.getPendingIntent(this))
+            //ActivityRecognition.getClient(this) // this = context
+            //    .requestActivityTransitionUpdates(request, googleApiPendingIntent)
+
+            task.addOnSuccessListener {
+                // Handle success
+            }
+
+            task.addOnFailureListener { e: Exception ->
+                // Handle error
+            }
+
+            // ON TERMINATION OF THE APP!!
+            // myPendingIntent is the instance of PendingIntent where the app receives callbacks.
+            val taskRemoval = ActivityRecognitionAPI.getClient(this)
+                .removeActivityTransitionUpdates(googleApiPendingIntent)
+
+            taskRemoval.addOnSuccessListener {
+                googleApiPendingIntent.cancel()
+            }
+
+            taskRemoval.addOnFailureListener { e: Exception ->
+                //Log.e("MYCOMPONENT", e.message)
+                Log.e("MYCOMPONENT", "error")
+            }
+            */
         } catch (e: Exception) {
             println(e)
         }
+    }
+
+    fun resumeReadings(view: View) {
+        mSensorsService?.resumeReading()
+    }
+
+    fun pauseReadings(view: View) {
+        mSensorsService?.pauseReading()
     }
 
 }

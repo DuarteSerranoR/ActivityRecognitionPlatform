@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\shared",
+    "\\shared\\src",
+    "\\shared\\src\\commonMain",
+    "\\shared\\src\\commonMain\\kotlin",
+    "\\shared\\src\\commonMain\\kotlin\\pie",
+    "\\shared\\src\\commonMain\\kotlin\\pie\\activityrecognition",
+    "\\shared\\src\\commonMain\\kotlin\\pie\\activityrecognition\\platform",
+    "\\shared\\src\\main",
+    "\\shared\\src\\main\\cpp"
+  ],
+  "SelectedNode": "\\shared\\src\\main\\cpp\\commonMain.cpp",
+  "PreviewInSolutionExplorer": false
+}
