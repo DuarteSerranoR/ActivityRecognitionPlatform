@@ -11,6 +11,9 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Binder
 import android.os.IBinder
+import java.lang.Exception
+import java.lang.Math.round
+import kotlin.math.roundToLong
 
 class ActivityRecognitionSensors : Service(), SensorEventListener {
 
@@ -43,10 +46,14 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
 
 
     private lateinit var mSensorManager : SensorManager
+
+
     private lateinit var mAmbientTemperature : Sensor
+    private val temperatureReading: Float = Float.NaN
     //private val highTempTimer
 
     private lateinit var mRelHumidity : Sensor
+    private val humidityReading: Float = Float.NaN
 
     private lateinit var mAccelerometer : Sensor
     private val accelerometerReading = FloatArray(3)
@@ -62,8 +69,13 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
 
     //private lateinit var mGyroscope : Sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
 
+    private val rotationMatrix = FloatArray(9)
+    private val orientationAngle = FloatArray(9)
+
     private var resume = false;
 
+    var angle: Long = 0
+    var direction: String = "N"
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
         return
@@ -100,19 +112,8 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
                 }
             }
 
-            /*
-            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
-                //if (event.sensor.type == Sensor.TYPE_ACCELEROMETER_UNCALIBRATED) {
-                val accelVal = event.values.asList().toString()
-                findViewById<TextView>(R.id.sensor_value).text = "Acceleration: " + accelVal
-                //val fell = commonMain.fall_detection_algorithm(event.values[0], event.values[1], event.values[2])
-                //print(fell)
-            }*/
-            /*
-            if (event.sensor.type == Sensor.TYPE_GRAVITY) {
-                val gravityVal = event.values.asList().toString()
-                findViewById<TextView>(R.id.sensor_value).text = "Acceleration: " + gravityVal
-            }*/
+            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER || event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD)
+                updateOrientationAngles()
         }
     }
 
@@ -128,5 +129,33 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
     fun pauseReading() {
         this.resume = false
         mSensorManager.unregisterListener(this)
+    }
+
+    private fun updateOrientationAngles() {
+        SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading)
+        val orientation = SensorManager.getOrientation(rotationMatrix, orientationAngle)
+        val degrees = (Math.toDegrees(orientation.get(0).toDouble()) + 360) % 360.0
+        angle = (degrees * 100).roundToLong() / 100
+        direction = compassDirection(degrees)
+    }
+
+    private fun compassDirection(angle: Double): String {
+        if (angle >= 350 || angle <= 10) // from { 10 - 0|360 - 350 }
+            return "N"
+        else if (280 < angle && angle < 350) // { 280. - 350. }
+            return "NW"
+        else if (260 < angle && angle <= 280) // { 260. - 280 }
+            return "W"
+        else if (190 < angle && angle <= 260) // { 190. - 260 }
+            return "SW"
+        else if (170 < angle && angle <= 190) // { 170. - 190 }
+            return "S"
+        else if (100 < angle && angle <= 170) // { 100. - 170 }
+            return "SE"
+        else if (80 < angle && angle <= 170) // { 80. - 170 }
+            return "E"
+        else if (10 < angle && angle <= 80) // { 10. - 80 }
+            return "NE"
+        throw Exception("Compass got unknown angle")
     }
 }
