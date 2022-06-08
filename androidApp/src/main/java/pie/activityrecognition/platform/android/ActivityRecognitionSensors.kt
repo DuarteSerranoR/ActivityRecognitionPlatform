@@ -18,17 +18,18 @@ import kotlin.math.roundToLong
 class ActivityRecognitionSensors : Service(), SensorEventListener {
 
 
-    private val mBinder = LocalBinder()
-
     override fun onCreate() {
         super.onCreate()
-        mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        mAmbientTemperature = mSensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
-        mRelHumidity = mSensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY)
-        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
-        resumeReading()
+        this.mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        this.mAmbientTemperature = mSensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
+        this.mRelHumidity = mSensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY)
+        this.mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        this.mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        //resumeReading()
     }
+
+    // Service binder
+    private val mBinder : LocalBinder = LocalBinder()
 
     inner class LocalBinder : Binder() {
         fun getService(): ActivityRecognitionSensors = this@ActivityRecognitionSensors
@@ -44,16 +45,15 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
     }
 
 
-
+    // Sensors
     private lateinit var mSensorManager : SensorManager
 
-
     private lateinit var mAmbientTemperature : Sensor
-    private val temperatureReading: Float = Float.NaN
+    private var temperatureReading: Float = Float.NaN
     //private val highTempTimer
 
     private lateinit var mRelHumidity : Sensor
-    private val humidityReading: Float = Float.NaN
+    private var humidityReading: Float = Float.NaN
 
     private lateinit var mAccelerometer : Sensor
     private val accelerometerReading = FloatArray(3)
@@ -74,8 +74,38 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
 
     private var resume = false;
 
-    var angle: Long = 0
-    var direction: String = "N"
+
+
+    // Usable information and functions
+    var temperatureStatus: String = "" // TODO - use
+
+    var angle: Long = 0 // TODO - use?
+    var direction: String = "" // TODO - use
+
+
+    var weather: String = "" // TODO - use
+                             // TODO - we could say that with 60% humidity it could be raining
+                             //         (67% humidity = 70% rain; 73% humidity = 70% rain; 75% humidity = 80% rain;)
+                             //         - but this is too speculative and not accurate at all. The T0D0 is to find a better solution.
+
+    fun resumeReading() {
+        this.resume = true
+        mSensorManager.registerListener(this, mAmbientTemperature, SensorManager.SENSOR_DELAY_NORMAL)
+        mSensorManager.registerListener(this, mRelHumidity, SensorManager.SENSOR_DELAY_NORMAL)
+        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL)
+        mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL)
+        //mSensorManager.registerListener(this, mGravity, SensorManager.SENSOR_DELAY_NORMAL)
+    }
+
+    fun pauseReading() {
+        this.resume = false
+        mSensorManager.unregisterListener(this)
+    }
+
+
+
+
+    // Sensor readings
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
         return
@@ -92,44 +122,59 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
         if (event != null && resume) {
             when (event.sensor.type) {
                 Sensor.TYPE_AMBIENT_TEMPERATURE -> {
-                    // TODO - read humidity comments
-                    print(event.values[0].toString()) // float with temp values
+                    temperatureReading = event.values[0]
+
+                    temperatureStatus = if (temperatureReading > 25)
+                        "hot"
+                    else if (temperatureReading < 10)
+                        "cold"
+                    else if (temperatureReading < 1)
+                        "freezing"
+                    else
+                        ""
+
+                    checkAndUpdateSicknessCounter()
                 }
                 Sensor.TYPE_RELATIVE_HUMIDITY -> {
                     // if high_humidity && low_temperature -> TimerState.Start -> startTimer() -> do this,
                     //                  and start another thread that counts x time and checks if it was interrupted,
                     //                  if so, it will start a new timer for how much time the pet is sick
-                    print(event.values[0].toString()) // Float with relative humidity in percentage
+
+                    humidityReading = event.values[0]
+
+                    weather =
+                        if (humidityReading > 60)
+                            "Raining" // TODO - make real world comparison, or a weather website/API
+                        else
+                            "Not raining" // TODO - sunny? Clear? Cloudy?
+
+                    checkAndUpdateSicknessCounter()
                 }
                 Sensor.TYPE_ACCELEROMETER -> {
-                    // Use stored in arrays with magnetic, later use to build a compass and maybe something else with coordinates
-                    // (maybe if the phone is being shacked and in what direction)
+                    // TODO - (get if the phone is being shacked and in what direction)
                     System.arraycopy(event.values, 0, accelerometerReading, 0, accelerometerReading.size)
+                    updateOrientationAngles()
                 }
                 Sensor.TYPE_MAGNETIC_FIELD -> {
-                    // TODO - read accelerometer
                     System.arraycopy(event.values, 0, magnetometerReading, 0, magnetometerReading.size)
+                    updateOrientationAngles()
                 }
             }
 
             if (event.sensor.type == Sensor.TYPE_ACCELEROMETER || event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD)
                 updateOrientationAngles()
+            else if (event.sensor.type == Sensor.TYPE_AMBIENT_TEMPERATURE || event.sensor.type == Sensor.TYPE_RELATIVE_HUMIDITY)
+                checkAndUpdateSicknessCounter()
         }
     }
 
-    fun resumeReading() {
-        this.resume = true
-        mSensorManager.registerListener(this, mAmbientTemperature, SensorManager.SENSOR_DELAY_NORMAL)
-        mSensorManager.registerListener(this, mRelHumidity, SensorManager.SENSOR_DELAY_NORMAL)
-        mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL)
-        mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL)
-        //mSensorManager.registerListener(this, mGravity, SensorManager.SENSOR_DELAY_NORMAL)
+
+    // Status update functions
+
+    private fun checkAndUpdateSicknessCounter() {
+        TODO("Not yet implemented")
     }
 
-    fun pauseReading() {
-        this.resume = false
-        mSensorManager.unregisterListener(this)
-    }
 
     private fun updateOrientationAngles() {
         SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading)

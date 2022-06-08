@@ -2,9 +2,13 @@
 package pie.activityrecognition.platform.android
 
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
@@ -41,28 +45,41 @@ class MainActivity: AppCompatActivity() {
     // compare the weather readings, ...., with real meteorology -> gps -> temperature
     // gps, temperature and dry humidity -> beach
 
-    //private lateinit var sensorsAPI : Intent
-    private lateinit var mViewModel: MainActivityViewModel
-    private var mSensorsService: ActivityRecognitionSensors? = null
+    private lateinit var mSensorsService: ActivityRecognitionSensors
     override fun onStart() {
         super.onStart()
 
-        mViewModel = ViewModelProvider(this)[MainActivityViewModel::class.java]
+        //mViewModel = ViewModelProvider(this)[MainActivityViewModel::class.java]
 
-        // Start Service
         val serviceIntent = Intent(this, ActivityRecognitionSensors::class.java)
+        // Start Service
         startService(serviceIntent)
-
         // Bind to Service
-        val serviceBindIntent = Intent(this, ActivityRecognitionSensors::class.java)
-        bindService(serviceBindIntent, mViewModel.getSensorServiceConnection(), Context.BIND_AUTO_CREATE)
+        bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE)
+    }
 
-        mSensorsService = mViewModel.getBinder().value?.getService()
+    var mBound = false
+    private val mConnection = object : ServiceConnection {
+        // Called when the connection with the service is established
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            // Because we have bound to an explicit
+            // service that is running in our own process, we can
+            // cast its IBinder to a concrete class and directly access it.
+            val binder = service as ActivityRecognitionSensors.LocalBinder
+            mSensorsService = binder.getService()
+            mBound = true
+        }
+
+        // Called when the connection with the service disconnects unexpectedly
+        override fun onServiceDisconnected(className: ComponentName) {
+            //Log.e(TAG, "onServiceDisconnected")
+            mBound = false
+        }
     }
 
     override fun onStop() {
         super.onStop()
-        unbindService(mViewModel.getSensorServiceConnection())
+        unbindService(mConnection)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -179,11 +196,11 @@ class MainActivity: AppCompatActivity() {
     }
 
     fun resumeReadings(view: View) {
-        mSensorsService?.resumeReading()
+        mSensorsService.resumeReading()
     }
 
     fun pauseReadings(view: View) {
-        mSensorsService?.pauseReading()
+        mSensorsService.pauseReading()
     }
 
 }
