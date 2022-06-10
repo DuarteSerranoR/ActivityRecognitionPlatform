@@ -50,15 +50,12 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
 
     private lateinit var mAmbientTemperature : Sensor
     private var temperatureReading: Float = Float.NaN
-    //private val highTempTimer
 
     private lateinit var mRelHumidity : Sensor
     private var humidityReading: Float = Float.NaN
 
     private lateinit var mAccelerometer : Sensor
     private val accelerometerReading = FloatArray(3)
-
-    // sleeping detection sound
 
     private lateinit var mMagnetometer : Sensor
     private val magnetometerReading = FloatArray(3)
@@ -77,7 +74,7 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
 
 
     // Usable information and functions
-    var temperatureStatus: String = "" // TODO - use
+    var temperatureStatus: String = "comfortable" // TODO - use
 
     var angle: Long = 0 // TODO - use?
     var direction: String = "" // TODO - use
@@ -87,6 +84,12 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
                              // TODO - we could say that with 60% humidity it could be raining
                              //         (67% humidity = 70% rain; 73% humidity = 70% rain; 75% humidity = 80% rain;)
                              //         - but this is too speculative and not accurate at all. The T0D0 is to find a better solution.
+
+    private var sicknessStartTimer = System.nanoTime()
+    private val defaultSDurationTime = 600 // seconds while sick
+    private val defaultSTime = 120 // seconds to be sick
+    private var sTimerStarted = false
+    var sick: Boolean = false
 
     fun resumeReading() {
         this.resume = true
@@ -131,7 +134,7 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
                     else if (temperatureReading < 1)
                         "freezing"
                     else
-                        ""
+                        "comfortable"
 
                     checkAndUpdateSicknessCounter()
                 }
@@ -143,9 +146,12 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
                     humidityReading = event.values[0]
 
                     weather =
-                        if (humidityReading > 60)
-                            "Raining" // TODO - make real world comparison, or a weather website/API
-                        else
+                        if (humidityReading > 60) {
+                            if (temperatureReading <= 0)
+                                "Snowing" // TODO - hail/granizo?
+                            else
+                                "Raining" // TODO - make real world comparison, or a weather website/API
+                        } else
                             "Not raining" // TODO - sunny? Clear? Cloudy?
 
                     checkAndUpdateSicknessCounter()
@@ -172,7 +178,32 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
     // Status update functions
 
     private fun checkAndUpdateSicknessCounter() {
-        TODO("Not yet implemented")
+        // Sickness Counter
+        if (sick) {
+            if (temperatureReading < 10 && humidityReading > 60) {
+                sicknessStartTimer = System.nanoTime()
+            }
+            val currentTime = System.nanoTime()
+            if ((currentTime - sicknessStartTimer) / 1_000_000_000 >= defaultSDurationTime) {
+                sick = false
+                sicknessStartTimer = System.nanoTime()
+            }
+        } else {
+            if (!sTimerStarted && temperatureReading < 10 && humidityReading > 60) {
+                sTimerStarted = true
+                sicknessStartTimer = System.nanoTime()
+            } else if (temperatureReading > 10 || humidityReading < 60) {
+                if (sTimerStarted) {
+                    val currentTime = System.nanoTime()
+                    val elapsedTime = (currentTime - sicknessStartTimer) / 1_000_000_000
+                    if (elapsedTime >= defaultSTime) {
+                        sick = true
+                        sicknessStartTimer = System.nanoTime()
+                    }
+                }
+                sTimerStarted = false
+            }
+        }
     }
 
 

@@ -26,6 +26,7 @@ class MainActivity: AppCompatActivity() {
      *
      * (accel) running -> pet shakes or runs with you
      * (accel) walk -> likewise
+     *
      * gravity -> pet is falling and will hit the ground hard. Or, if lighter, it is on an elevator
      * humidity -> if high for x time, it gets sick.
      * temperature -> too hot, sweats; too cold, trembles and shakes.
@@ -38,9 +39,12 @@ class MainActivity: AppCompatActivity() {
      * running
      * (walking)
      * gravity 2x
+     *
      * temperature -> too hot, sweats; too cold, trembles and shakes.
      * rainy weather with umbrella -> use humidity and pressure sensors. Research (Geography, meteorology).
      * */
+
+    // TODO - sleeping detection sound and light
 
     // compare the weather readings, ...., with real meteorology -> gps -> temperature
     // gps, temperature and dry humidity -> beach
