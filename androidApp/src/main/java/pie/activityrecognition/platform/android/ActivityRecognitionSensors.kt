@@ -14,12 +14,31 @@ import android.os.IBinder
 import java.lang.Exception
 import java.lang.Math.round
 import kotlin.math.roundToLong
+import kotlin.math.sqrt
 
 class ActivityRecognitionSensors : Service(), SensorEventListener {
 
 
+
+
+    // Configurations
+
+    private val defaultSDurationTime = 600 // seconds while sick
+    private val defaultSTime = 120 // seconds to be sick
+    private val shakeRepNum = 20 // Duration of shake activation
+
+
+
+
+    // Constructor
+
     override fun onCreate() {
         super.onCreate()
+
+        acceleration = 10f
+        currentAcceleration = SensorManager.GRAVITY_EARTH
+        lastAcceleration = SensorManager.GRAVITY_EARTH
+
         this.mSensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         this.mAmbientTemperature = mSensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
         this.mRelHumidity = mSensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY)
@@ -28,7 +47,11 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
         //resumeReading()
     }
 
+
+
+
     // Service binder
+
     private val mBinder : LocalBinder = LocalBinder()
 
     inner class LocalBinder : Binder() {
@@ -45,51 +68,56 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
     }
 
 
+
+
     // Sensors
+
     private lateinit var mSensorManager : SensorManager
+    private var resume = false;
 
     private lateinit var mAmbientTemperature : Sensor
     private var temperatureReading: Float = Float.NaN
 
     private lateinit var mRelHumidity : Sensor
     private var humidityReading: Float = Float.NaN
+    private var sicknessStartTimer = System.nanoTime()
+    private var sTimerStarted = false
 
     private lateinit var mAccelerometer : Sensor
     private val accelerometerReading = FloatArray(3)
+    private val rotationMatrix = FloatArray(9)
+    private val orientationAngle = FloatArray(9)
+    private var acceleration = 0f
+    private var currentAcceleration = 0f
+    private var lastAcceleration = 0f
+    private var shakeIndex = 0
 
     private lateinit var mMagnetometer : Sensor
     private val magnetometerReading = FloatArray(3)
 
-    //private lateinit var mGravity : Sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
-
     //private lateinit var mLight : Sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
 
-    //private lateinit var mGyroscope : Sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
-
-    private val rotationMatrix = FloatArray(9)
-    private val orientationAngle = FloatArray(9)
-
-    private var resume = false;
 
 
 
     // Usable information and functions
-    var temperatureStatus: String = "comfortable" // TODO - use
 
     var angle: Long = 0 // TODO - use?
     var direction: String = "" // TODO - use
+    var shake: Boolean = false // TODO - use
 
+    var temperatureStatus: String = "comfortable" // TODO - use
 
     var weather: String = "" // TODO - use
+                             // TODO - try out using the pressure sensor also?
                              // TODO - we could say that with 60% humidity it could be raining
                              //         (67% humidity = 70% rain; 73% humidity = 70% rain; 75% humidity = 80% rain;)
                              //         - but this is too speculative and not accurate at all. The T0D0 is to find a better solution.
 
-    private var sicknessStartTimer = System.nanoTime()
-    private val defaultSDurationTime = 600 // seconds while sick
-    private val defaultSTime = 120 // seconds to be sick
-    private var sTimerStarted = false
-    var sick: Boolean = false
+    var sick: Boolean = false // TODO - use
+
+
+
 
     fun resumeReading() {
         this.resume = true
@@ -97,7 +125,7 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
         mSensorManager.registerListener(this, mRelHumidity, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL)
-        //mSensorManager.registerListener(this, mGravity, SensorManager.SENSOR_DELAY_NORMAL)
+        //mSensorManager.registerListener(this, mLight, SensorManager.SENSOR_DELAY_NORMAL)
     }
 
     fun pauseReading() {
@@ -116,15 +144,10 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
 
     override fun onSensorChanged(event: SensorEvent?) { // https://mdpi-res.com/d_attachment/sensors/sensors-15-17827/article_deploy/sensors-15-17827-v2.pdf?version=1438068266
 
-        /*
-        * event.values[0] is x
-        * event.values[1] is y
-        * event.values[2] is z
-        * */
-
         if (event != null && resume) {
             when (event.sensor.type) {
                 Sensor.TYPE_AMBIENT_TEMPERATURE -> {
+
                     temperatureReading = event.values[0]
 
                     temperatureStatus = if (temperatureReading > 25)
@@ -139,9 +162,6 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
                     checkAndUpdateSicknessCounter()
                 }
                 Sensor.TYPE_RELATIVE_HUMIDITY -> {
-                    // if high_humidity && low_temperature -> TimerState.Start -> startTimer() -> do this,
-                    //                  and start another thread that counts x time and checks if it was interrupted,
-                    //                  if so, it will start a new timer for how much time the pet is sick
 
                     humidityReading = event.values[0]
 
@@ -157,9 +177,14 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
                     checkAndUpdateSicknessCounter()
                 }
                 Sensor.TYPE_ACCELEROMETER -> {
-                    // TODO - (get if the phone is being shacked and in what direction)
+
+                    val x = event.values[0]
+                    val y = event.values[1]
+                    val z = event.values[2]
+
                     System.arraycopy(event.values, 0, accelerometerReading, 0, accelerometerReading.size)
                     updateOrientationAngles()
+                    shakeDetection(x, y, z)
                 }
                 Sensor.TYPE_MAGNETIC_FIELD -> {
                     System.arraycopy(event.values, 0, magnetometerReading, 0, magnetometerReading.size)
@@ -173,6 +198,8 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
                 checkAndUpdateSicknessCounter()
         }
     }
+
+
 
 
     // Status update functions
@@ -206,13 +233,28 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
         }
     }
 
-
     private fun updateOrientationAngles() {
         SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading)
         val orientation = SensorManager.getOrientation(rotationMatrix, orientationAngle)
         val degrees = (Math.toDegrees(orientation.get(0).toDouble()) + 360) % 360.0
         angle = (degrees * 100).roundToLong() / 100
         direction = compassDirection(degrees)
+    }
+
+    private fun shakeDetection(x: Float, y: Float, z: Float) {
+        lastAcceleration = currentAcceleration
+        currentAcceleration = sqrt((x * x + y * y + z * z).toDouble()).toFloat()
+        val delta: Float = currentAcceleration - lastAcceleration
+        acceleration = acceleration * 0.9f + delta
+        if (acceleration > 12) {
+            shakeIndex = 0
+            shake = true
+            // TODO - detect the direction/orientation (up&down, etc. with angles or main angle)
+        }
+        else if (shakeIndex < shakeRepNum)
+            shakeIndex++
+        else if (shake && shakeIndex >= shakeRepNum)
+            shake = false
     }
 
     private fun compassDirection(angle: Double): String {
@@ -235,3 +277,4 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
         throw Exception("Compass got unknown angle")
     }
 }
+
