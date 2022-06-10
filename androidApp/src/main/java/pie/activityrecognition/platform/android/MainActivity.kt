@@ -10,9 +10,12 @@ import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import java.lang.Exception
+import kotlin.concurrent.thread
 
 
 // Alternative lower level Sensor class from Kotlin instead of google's
@@ -44,7 +47,7 @@ class MainActivity: AppCompatActivity() {
      * rainy weather with umbrella -> use humidity and pressure sensors. Research (Geography, meteorology).
      * */
 
-    // TODO - sleeping detection sound and light
+    // TODO - sleeping detection - use sound and light
 
     // compare the weather readings, ...., with real meteorology -> gps -> temperature
     // gps, temperature and dry humidity -> beach
@@ -52,8 +55,6 @@ class MainActivity: AppCompatActivity() {
     private lateinit var mSensorsService: ActivityRecognitionSensors
     override fun onStart() {
         super.onStart()
-
-        //mViewModel = ViewModelProvider(this)[MainActivityViewModel::class.java]
 
         val serviceIntent = Intent(this, ActivityRecognitionSensors::class.java)
         // Start Service
@@ -86,9 +87,37 @@ class MainActivity: AppCompatActivity() {
         unbindService(mConnection)
     }
 
+
+    private lateinit var directionTxt: TextView
+    private lateinit var sickTxt: TextView
+    private lateinit var angleTxt: TextView
+    private lateinit var temperatureTxt: TextView
+    private lateinit var weatherTxt: TextView
+    private lateinit var shakeTxt: TextView
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        angleTxt = findViewById(R.id.angleTxt)
+        angleTxt.text = "Angle: NaN"
+
+        directionTxt = findViewById(R.id.directionTxt)
+        directionTxt.text = "Direction: NaN"
+
+        shakeTxt = findViewById(R.id.shakeTxt)
+        shakeTxt.text = "Shake: NaN"
+
+        temperatureTxt = findViewById(R.id.temperatureTxt)
+        temperatureTxt.text = "Temperature: NaN"
+
+        weatherTxt = findViewById(R.id.weatherTxt)
+        weatherTxt.text = "Weather: NaN"
+
+        sickTxt = findViewById(R.id.sickTxt)
+        sickTxt.text = "Sick: NaN"
+
 
         try {
 
@@ -201,10 +230,29 @@ class MainActivity: AppCompatActivity() {
 
     fun resumeReadings(view: View) {
         mSensorsService.resumeReading()
+        angleTxt.text = "Angle: " + mSensorsService.angle + "º"
+        directionTxt.text = "Direction: " + mSensorsService.direction
+        shakeTxt.text = "Shake: " + mSensorsService.angle
+        temperatureTxt.text = "Temperature: " + mSensorsService.temperatureStatus
+        weatherTxt.text = "Weather: " + mSensorsService.weather
+        sickTxt.text = "Sick: " + mSensorsService.sick
+
+        //angleTxt.text = "Angle: 0"
+        //directionTxt.text = "Direction: 0"
+        //shakeTxt.text = "Shake: False"
+        //temperatureTxt.text = "Temperature: 30"
+        //weatherTxt.text = "Weather: comfortable"
+        //sickTxt.text = "Sick: False"
     }
 
     fun pauseReadings(view: View) {
         mSensorsService.pauseReading()
+        angleTxt.text = "Angle: NaN"
+        directionTxt.text = "Direction: NaN"
+        shakeTxt.text = "Shake: NaN"
+        temperatureTxt.text = "Temperature: NaN"
+        weatherTxt.text = "Weather: NaN"
+        sickTxt.text = "Sick: NaN"
     }
 
 }

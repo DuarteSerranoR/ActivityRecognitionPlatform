@@ -103,12 +103,12 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
     // Usable information and functions
 
     var angle: Long = 0 // TODO - use?
-    var direction: String = "" // TODO - use
+    var direction: String = "N" // TODO - use
     var shake: Boolean = false // TODO - use
 
     var temperatureStatus: String = "comfortable" // TODO - use
 
-    var weather: String = "" // TODO - use
+    var weather: String = "Not raining" // TODO - use
                              // TODO - try out using the pressure sensor also?
                              // TODO - we could say that with 60% humidity it could be raining
                              //         (67% humidity = 70% rain; 73% humidity = 70% rain; 75% humidity = 80% rain;)

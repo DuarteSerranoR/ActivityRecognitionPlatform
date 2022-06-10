@@ -7,70 +7,102 @@
     android:layout_height="match_parent">
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/startBtn"
         android:layout_width="100dp"
         android:layout_height="50dp"
         android:layout_marginStart="32dp"
-        android:layout_marginTop="48dp"
         android:layout_marginEnd="42dp"
+        android:layout_marginBottom="92dp"
         android:onClick="resumeReadings"
         android:text="@string/startBtn"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/button2"
-        app:layout_constraintTop_toBottomOf="@+id/sensor_value"
+        app:layout_constraintStart_toEndOf="@+id/pauseBtn"
         tools:ignore="DuplicateSpeakableTextCheck" />
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/pauseBtn"
         android:layout_width="100dp"
         android:layout_height="50dp"
         android:layout_marginStart="39dp"
-        android:layout_marginTop="48dp"
         android:layout_marginEnd="32dp"
+        android:layout_marginBottom="92dp"
         android:onClick="pauseReadings"
         android:text="@string/pauseBtn"
-        android:visibility="visible"
-        app:layout_constraintEnd_toStartOf="@+id/button"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/sensor_value" />
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/startBtn"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <TextView
-        android:id="@+id/fallCounter"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="126dp"
-        android:layout_marginTop="21dp"
-        android:layout_marginEnd="127dp"
-        android:layout_marginBottom="37dp"
-        android:text="@string/loading"
-        app:layout_constraintBottom_toTopOf="@+id/sensor_value"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:id="@+id/directionTxt"
+        android:layout_width="380dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="24dp"
+        android:textAlignment="viewStart"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@+id/shakeTxt"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/stumbleCounter" />
+        app:layout_constraintTop_toBottomOf="@+id/angleTxt"
+        tools:text="Direction: NaN" />
 
     <TextView
-        android:id="@+id/stumbleCounter"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="126dp"
-        android:layout_marginTop="52dp"
-        android:layout_marginEnd="127dp"
-        android:layout_marginBottom="21dp"
-        android:text="@string/loading"
-        app:layout_constraintBottom_toTopOf="@+id/fallCounter"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:id="@+id/sickTxt"
+        android:layout_width="380dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="24dp"
+        android:textAlignment="viewStart"
+        android:textSize="24sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/weatherTxt"
+        tools:text="Sick: NaN" />
 
     <TextView
-        android:id="@+id/sensor_value"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="111dp"
-        android:layout_marginTop="26dp"
-        android:layout_marginEnd="120dp"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:id="@+id/angleTxt"
+        android:layout_width="380dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="163dp"
+        android:textAlignment="viewStart"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@+id/directionTxt"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/fallCounter" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Angle: NaN" />
+
+    <TextView
+        android:id="@+id/temperatureTxt"
+        android:layout_width="380dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="24dp"
+        android:textAlignment="viewStart"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@+id/weatherTxt"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/shakeTxt"
+        tools:text="Temperature: NaN" />
+
+    <TextView
+        android:id="@+id/weatherTxt"
+        android:layout_width="380dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="24dp"
+        android:textAlignment="viewStart"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@+id/sickTxt"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/temperatureTxt"
+        tools:text="Weather: NaN" />
+
+    <TextView
+        android:id="@+id/shakeTxt"
+        android:layout_width="380dp"
+        android:layout_height="42dp"
+        android:layout_marginStart="24dp"
+        android:textAlignment="viewStart"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@+id/temperatureTxt"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/directionTxt"
+        tools:text="Shake: NaN" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
