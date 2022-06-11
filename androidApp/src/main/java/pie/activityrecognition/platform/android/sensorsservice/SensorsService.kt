@@ -1,8 +1,6 @@
-package pie.activityrecognition.platform.android
+package pie.activityrecognition.platform.android.sensorsservice
 
 import android.app.Service
-import android.app.job.JobParameters
-import android.app.job.JobService
 import android.content.Context
 import android.content.Intent
 import android.hardware.Sensor
@@ -11,12 +9,10 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Binder
 import android.os.IBinder
-import java.lang.Exception
-import java.lang.Math.round
 import kotlin.math.roundToLong
 import kotlin.math.sqrt
 
-class ActivityRecognitionSensors : Service(), SensorEventListener {
+class SensorsService : Service(), SensorEventListener {
 
 
 
@@ -47,6 +43,12 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
         //resumeReading()
     }
 
+    override fun onDestroy() {
+        if (running)
+            pauseReading()
+        super.onDestroy()
+    }
+
 
 
 
@@ -55,7 +57,7 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
     private val mBinder : LocalBinder = LocalBinder()
 
     inner class LocalBinder : Binder() {
-        fun getService(): ActivityRecognitionSensors = this@ActivityRecognitionSensors
+        fun getService(): SensorsService = this@SensorsService
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -73,7 +75,6 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
     // Sensors
 
     private lateinit var mSensorManager : SensorManager
-    private var resume = false;
 
     private lateinit var mAmbientTemperature : Sensor
     private var temperatureReading: Float = Float.NaN
@@ -102,6 +103,8 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
 
     // Usable information and functions
 
+    var running = false
+
     var angle: Long = 0 // TODO - use?
     var direction: String = "N" // TODO - use
     var shake: Boolean = false // TODO - use
@@ -120,7 +123,7 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
 
 
     fun resumeReading() {
-        this.resume = true
+        running = true
         mSensorManager.registerListener(this, mAmbientTemperature, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager.registerListener(this, mRelHumidity, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL)
@@ -129,7 +132,7 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
     }
 
     fun pauseReading() {
-        this.resume = false
+        running = false
         mSensorManager.unregisterListener(this)
     }
 
@@ -144,7 +147,7 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
 
     override fun onSensorChanged(event: SensorEvent?) { // https://mdpi-res.com/d_attachment/sensors/sensors-15-17827/article_deploy/sensors-15-17827-v2.pdf?version=1438068266
 
-        if (event != null && resume) {
+        if (event != null && running) {
             when (event.sensor.type) {
                 Sensor.TYPE_AMBIENT_TEMPERATURE -> {
 
@@ -233,12 +236,12 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
         }
     }
 
-    private fun updateOrientationAngles() {
-        SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading)
+    private fun updateOrientationAngles() {       SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading)
         val orientation = SensorManager.getOrientation(rotationMatrix, orientationAngle)
-        val degrees = (Math.toDegrees(orientation.get(0).toDouble()) + 360) % 360.0
+        //val degrees = (Math.toDegrees(orientation.get(0).toDouble()) + 360) % 360.0
+        val degrees = (Math.toDegrees(orientation[0].toDouble()) + 360) % 360.0
         angle = (degrees * 100).roundToLong() / 100
-        direction = compassDirection(degrees)
+        direction = SensorsUtils.compassDirection(degrees)
     }
 
     private fun shakeDetection(x: Float, y: Float, z: Float) {
@@ -255,26 +258,6 @@ class ActivityRecognitionSensors : Service(), SensorEventListener {
             shakeIndex++
         else if (shake && shakeIndex >= shakeRepNum)
             shake = false
-    }
-
-    private fun compassDirection(angle: Double): String {
-        if (angle >= 350 || angle <= 10) // from { 10 - 0|360 - 350 }
-            return "N"
-        else if (280 < angle && angle < 350) // { 280. - 350. }
-            return "NW"
-        else if (260 < angle && angle <= 280) // { 260. - 280 }
-            return "W"
-        else if (190 < angle && angle <= 260) // { 190. - 260 }
-            return "SW"
-        else if (170 < angle && angle <= 190) // { 170. - 190 }
-            return "S"
-        else if (100 < angle && angle <= 170) // { 100. - 170 }
-            return "SE"
-        else if (80 < angle && angle <= 170) // { 80. - 170 }
-            return "E"
-        else if (10 < angle && angle <= 80) // { 10. - 80 }
-            return "NE"
-        throw Exception("Compass got unknown angle")
     }
 }
 
