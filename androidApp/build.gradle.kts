@@ -15,8 +15,8 @@ android {
         applicationId = "pie.activityrecognition.platform.android"
         minSdk = 28
         targetSdk = 32
-        versionCode = 14
-        versionName = "Alpha-0.6"
+        versionCode = 16
+        versionName = "Alpha-0.7"
     }
     buildTypes {
         getByName("release") {

@@ -35,9 +35,10 @@ class SensorsService : Service(), SensorEventListener {
     companion object {
         private const val defaultSDurationTime = 600 // seconds while sick
         private const val defaultSTime = 120 // seconds to be sick
-        private const val shakeRepNum = 20 // Duration of shake activation
-        private const val sleepMinDecibels: Int = 60 // Defines the minimum decibels
-                                                       // for it to be sleepy
+        private const val shakeRepNum = 35 // Duration/Delay of shake activation
+        //private const val sleepMinDecibels: Int = 60
+        private const val sleepMinDecibels: Int = 50 // Defines the minimum decibels
+                                                     // for it to be sleepy
         //private const val sleepMinAmplitude: Int = 100 // Defines the minimum amplitude
         //                                               // for it to be sleepy
         private const val sleepyTime: Long = 20 // How long it will be sleepy before falling asleep
@@ -362,7 +363,8 @@ class SensorsService : Service(), SensorEventListener {
         }
     }
 
-    private fun updateOrientationAngles() {       SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading)
+    private fun updateOrientationAngles() {
+        SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerReading, magnetometerReading)
         val orientation = SensorManager.getOrientation(rotationMatrix, orientationAngle)
         //val degrees = (Math.toDegrees(orientation.get(0).toDouble()) + 360) % 360.0
         val degrees = (Math.toDegrees(orientation[0].toDouble()) + 360) % 360.0
@@ -403,18 +405,19 @@ class SensorsService : Service(), SensorEventListener {
     }
 
     private fun checkSleepWAudio() {
-        if (light < 4 && sound < sleepMinDecibels) {
+        if (light < 4 && sound < sleepMinDecibels && sleepStatus == "Awake") {
             sleepyElapsed = TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
             sleepStatus = "Sleepy"
         }
         else if (light > 4 || sound > sleepMinDecibels) {
             sleepStatus = "Awake"
         }
-
-        val currentTimeSecs = TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
-        val sleepySecs: Long = currentTimeSecs - sleepyElapsed
-        if (sleepySecs < sleepyTime && sleepStatus == "Sleepy") {
-            sleepStatus = "Sleeping"
+        else {
+            val currentTimeSecs = TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
+            val sleepySecs: Long = currentTimeSecs - sleepyElapsed
+            if (sleepySecs > sleepyTime && sleepStatus == "Sleepy") {
+                sleepStatus = "Sleeping"
+            }
         }
     }
 }
