@@ -4,13 +4,19 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        create("release") {
+            storeFile =
+                file("C:\\Users\\rapos\\OneDrive\\Desktop\\IT\\Dev\\Workspace\\ActivityRecognitionPlatform\\androidApp\\release\\output-metadata.json")
+        }
+    }
     compileSdk = 32
     defaultConfig {
         applicationId = "pie.activityrecognition.platform.android"
         minSdk = 28
         targetSdk = 32
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 16
+        versionName = "Alpha-0.7"
     }
     buildTypes {
         getByName("release") {
@@ -28,7 +34,6 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.4.2")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("com.google.android.gms:play-services-location:20.0.0")
-
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.4.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.1")
     implementation("androidx.navigation:navigation-fragment-ktx:2.4.2")
