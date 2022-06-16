@@ -2,16 +2,20 @@
 package pie.activityrecognition.platform.android
 
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
 import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.*
 import pie.activityrecognition.platform.android.activityapiservice.ActivityRecognitionService
 import pie.activityrecognition.platform.android.sensorsservice.SensorsService
@@ -45,10 +49,10 @@ class MainActivity: AppCompatActivity() {
      *
      * temperature -> too hot, sweats; too cold, trembles and shakes.
      * rainy weather with umbrella -> use humidity and pressure sensors. Research (Geography, meteorology).
-     *
+     * sleeping detection - use sound and light
      * --------------------------------------
      *
-     * TODO - sleeping detection - use sound and light
+     * TODO -
      *  compare the weather readings, ...., with real meteorology -> gps -> temperature
      *  gps, temperature and dry humidity -> beach
      *
@@ -122,7 +126,7 @@ class MainActivity: AppCompatActivity() {
         sickTxt.text = "Sick: NaN"
         lightTxt.text = "Light: NaN"
         sleepTxt.text = "Sleep: NaN"
-        //soundTxt.text = "Sound: NaN"
+        soundTxt.text = "Sound: NaN"
 
         //runTxt.text = "Running: NaN"
         //runPTxt.text = "Running Percentage: NaN"
@@ -176,10 +180,10 @@ class MainActivity: AppCompatActivity() {
         else
             sleepTxt.text = "No Light Sensors detected."
 
-        //if (mSensorsService.hasLightSensor)
-        //    soundTxt.text = "Sound: " + mSensorsService.sound + ""
-        //else
-        //    soundTxt.text = "No Light Sensors detected, we skip sound."
+        if (mSensorsService.hasLightSensor)
+            soundTxt.text = "Sound: " + mSensorsService.sound + ""
+        else
+            soundTxt.text = "No Light Sensors detected, we skip sound."
 
         //runTxt.text = "Running: "
         //runPTxt.text = "Running Percentage: "
@@ -200,13 +204,12 @@ class MainActivity: AppCompatActivity() {
     private lateinit var shakeTxt: TextView
     private lateinit var lightTxt: TextView
     private lateinit var sleepTxt: TextView
-    //private lateinit var soundTxt: TextView
+    private lateinit var soundTxt: TextView
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        /* // TODO - this requires a valid policy url to justify the use of audio recording
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
         {
             val permissions =
@@ -214,7 +217,7 @@ class MainActivity: AppCompatActivity() {
 
             ActivityCompat.requestPermissions(this, permissions,0)
         }
-        */
+
         // this.checkSelfPermission("com.google.android.gms.permission.ACTIVITY_RECOGNITION")
 
         sensorServiceIntent = Intent(this, SensorsService::class.java)
@@ -233,7 +236,7 @@ class MainActivity: AppCompatActivity() {
         sickTxt = findViewById(R.id.sickTxt)
         lightTxt = findViewById(R.id.lightTxt)
         sleepTxt = findViewById(R.id.sleepTxt)
-        //soundTxt = findViewById(R.id.soundTxt)
+        soundTxt = findViewById(R.id.soundTxt)
 
         updateNaNValues()
 
@@ -247,8 +250,7 @@ class MainActivity: AppCompatActivity() {
         }
     }
 
-    @SuppressLint("SetTextI18n")
-    fun startUIUpdatesCoroutine() = runBlocking {
+    private fun startUIUpdatesCoroutine() = runBlocking {
         scope.launch {
             delay(1000L)
             while (true) {

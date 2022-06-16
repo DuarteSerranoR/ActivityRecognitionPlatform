@@ -1,15 +1,26 @@
 package pie.activityrecognition.platform.android.sensorsservice
 
+import android.Manifest
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.media.*
 import android.os.Binder
 import android.os.IBinder
+import androidx.core.app.ActivityCompat
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import java.lang.Exception
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
+import kotlin.math.log10
 import kotlin.math.roundToLong
 import kotlin.math.sqrt
 
@@ -25,14 +36,16 @@ class SensorsService : Service(), SensorEventListener {
         private const val defaultSDurationTime = 600 // seconds while sick
         private const val defaultSTime = 120 // seconds to be sick
         private const val shakeRepNum = 20 // Duration of shake activation
+        private const val sleepMinDecibels: Int = 60 // Defines the minimum decibels
+                                                       // for it to be sleepy
         //private const val sleepMinAmplitude: Int = 100 // Defines the minimum amplitude
-                                                        // for it to be sleepy
+        //                                               // for it to be sleepy
         private const val sleepyTime: Long = 20 // How long it will be sleepy before falling asleep
 
         // For audio
-        //private const val sampleRate = 48000
-        //private const val channelConfig = AudioFormat.CHANNEL_IN_MONO
-        //private const val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+        private const val sampleRate = 48000
+        private const val channelConfig = AudioFormat.CHANNEL_IN_MONO
+        private const val audioFormat = AudioFormat.ENCODING_PCM_16BIT
     }
 
 
@@ -44,7 +57,7 @@ class SensorsService : Service(), SensorEventListener {
         super.onCreate()
 
         // Permission check for audio recording
-        /*
+
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         ) {
@@ -53,8 +66,9 @@ class SensorsService : Service(), SensorEventListener {
                 channelConfig,
                 audioFormat,
                 minBufferSize * 10)
+            startAudioStream()
         }
-         */
+
 
         // Initialization of other services
         acceleration = 10f
@@ -85,7 +99,7 @@ class SensorsService : Service(), SensorEventListener {
     override fun onDestroy() {
         if (running)
             pauseReading()
-        //mRecorder?.release()
+        mRecorder?.release()
         super.onDestroy()
     }
 
@@ -145,8 +159,10 @@ class SensorsService : Service(), SensorEventListener {
     private var sleepyElapsed : Long = 0
 
     // Audio Recorder
-    //private val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
-    //private var mRecorder: AudioRecord? = null
+    private val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
+    private var mRecorder: AudioRecord? = null
+    private var recording : Boolean = false
+    private val scope = MainScope()
 
 
     // Usable information and functions
@@ -169,7 +185,7 @@ class SensorsService : Service(), SensorEventListener {
 
     var sleepStatus : String = "Awake" // TODO - use enumerable objects here and in the weather reading?
     var light : Float = 0f
-    var sound: Double = 0.0
+    var sound: Double = 0.0 // Constantly represents the max Amplitude
 
 
 
@@ -181,13 +197,15 @@ class SensorsService : Service(), SensorEventListener {
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager.registerListener(this, mLight, SensorManager.SENSOR_DELAY_NORMAL)
-        //mRecorder?.startRecording()
+        mRecorder?.startRecording()
+        recording = true
     }
 
     fun pauseReading() {
         running = false
         mSensorManager.unregisterListener(this)
-        //mRecorder?.stop()
+        recording = false
+        mRecorder?.stop()
     }
 
 
@@ -249,21 +267,20 @@ class SensorsService : Service(), SensorEventListener {
                 }
                 Sensor.TYPE_LIGHT -> {
                     light = event.values[0]
-                    /*if (mRecorder != null) {
+                    if (mRecorder != null &&
+                        ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                            == PackageManager.PERMISSION_GRANTED)
                         checkSleepWAudio()
-                        mRecorder?.stop()
-                        mRecorder?.release()
-                        mRecorder?.startRecording()
-                    }
-                    else {*/
-                    checkSleep()
-                    //}
+                    else
+                        checkSleep()
                 }
             }
 
-            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER || event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD)
+            if (event.sensor.type == Sensor.TYPE_ACCELEROMETER
+                || event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD)
                 updateOrientationAngles()
-            else if (event.sensor.type == Sensor.TYPE_AMBIENT_TEMPERATURE || event.sensor.type == Sensor.TYPE_RELATIVE_HUMIDITY)
+            else if (event.sensor.type == Sensor.TYPE_AMBIENT_TEMPERATURE
+                || event.sensor.type == Sensor.TYPE_RELATIVE_HUMIDITY)
                 checkAndUpdateSicknessCounter()
 
             if (mAccelerometer == null)
@@ -277,6 +294,38 @@ class SensorsService : Service(), SensorEventListener {
             if (mLight == null)
                 hasLightSensor = false
         }
+    }
+
+    private fun startAudioStream() = runBlocking {
+            scope.launch {
+                try {
+                    delay(1000L)
+                    val buffer = ShortArray(minBufferSize)
+                    while (true) {
+                        delay(10L)
+                        if (recording) {
+                            var maxAmplitude = 0.0
+                            // read the data into the buffer
+                            val readSize: Int = mRecorder!!.read(buffer, 0, buffer.size)
+                            for (i in 0 until readSize) {
+                                if (abs(buffer[i].toDouble()) > maxAmplitude) {
+                                    maxAmplitude = abs(buffer[i].toDouble())
+                                }
+                            }
+                            // this converts the amplitude to decibels
+                            var db = 0.0
+                            if (maxAmplitude != 0.0) {
+                                db = 20.0 * log10(maxAmplitude / 32767.0) + 90
+                            }
+                            sound = db
+                        }
+                        else
+                            sound = 0.0
+                    }
+                } catch (e: Exception) {
+                    println("Exception on AudioRecording Coroutine: $e")
+                }
+            }
     }
 
 
@@ -352,14 +401,13 @@ class SensorsService : Service(), SensorEventListener {
             sleepStatus = "Sleeping"
         }
     }
-    /*
+
     private fun checkSleepWAudio() {
-        sound = getMaxAmplitude().toDouble()
-        if (light < 4 && sound < sleepMinAmplitude) {
+        if (light < 4 && sound < sleepMinDecibels) {
             sleepyElapsed = TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
             sleepStatus = "Sleepy"
         }
-        else if (light > 4 || sound > sleepMinAmplitude) {
+        else if (light > 4 || sound > sleepMinDecibels) {
             sleepStatus = "Awake"
         }
 
@@ -369,12 +417,5 @@ class SensorsService : Service(), SensorEventListener {
             sleepStatus = "Sleeping"
         }
     }
-
-    private fun getMaxAmplitude() : Float {
-        //mRecorder
-        return 0f // TODO - this would get the maximum amplitude,
-                      but due to the policy restrictions, sound processing was not implemented.
-    }
-    */
 }
 

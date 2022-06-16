@@ -10,28 +10,22 @@
         android:id="@+id/startBtn"
         android:layout_width="100dp"
         android:layout_height="50dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="42dp"
-        android:layout_marginBottom="92dp"
+        android:layout_marginBottom="16dp"
         android:onClick="resumeReadings"
         android:text="@string/startBtn"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/pauseBtn"
         tools:ignore="DuplicateSpeakableTextCheck" />
 
     <Button
         android:id="@+id/pauseBtn"
         android:layout_width="100dp"
         android:layout_height="50dp"
-        android:layout_marginStart="39dp"
-        android:layout_marginEnd="32dp"
-        android:layout_marginBottom="92dp"
+        android:layout_marginBottom="16dp"
         android:onClick="pauseReadings"
         android:text="@string/pauseBtn"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/startBtn"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintEnd_toStartOf="@+id/startBtn" />
 
     <TextView
         android:id="@+id/directionTxt"
@@ -57,17 +51,16 @@
         app:layout_constraintTop_toBottomOf="@+id/weatherTxt"
         tools:text="Sick: NaN" />
 
-    <!--TextView
+    <TextView
         android:id="@+id/soundTxt"
         android:layout_width="380dp"
-        android:layout_height="42dp"
+        android:layout_height="70dp"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="120dp"
         android:textAlignment="viewStart"
         android:textSize="24sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/weatherTxt"
-        tools:text="Sound: NaN" /-->
+        app:layout_constraintTop_toBottomOf="@+id/sleepTxt"
+        tools:text="Sound: NaN" />
 
     <TextView
         android:id="@+id/lightTxt"
