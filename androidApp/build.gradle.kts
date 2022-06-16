@@ -12,11 +12,11 @@ android {
     }
     compileSdk = 32
     defaultConfig {
-        applicationId = "pie.activityrecognition.platform.android"
+        applicationId = "ActivityRecognitionPlatform"
         minSdk = 28
         targetSdk = 32
-        versionCode = 2
-        versionName = "1.0-alpha"
+        versionCode = 10
+        versionName = "Alpha-0.4"
     }
     buildTypes {
         getByName("release") {

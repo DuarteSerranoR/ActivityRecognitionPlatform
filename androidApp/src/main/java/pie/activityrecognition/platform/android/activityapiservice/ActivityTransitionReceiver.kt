@@ -67,6 +67,8 @@ class ActivityTransitionReceiver : BroadcastReceiver() {
 
                     // Running
                     runningPercentage = ((runningTime / currentTotalElapsedTime) * 100).toFloat()
+                    // TODO - use the UI to always keep it current, get the current status,
+                    //  time between the last update and current, and make the percentage.
 
                     // Walking
                     walkingPercentage = ((walkingTime / currentTotalElapsedTime) * 100).toFloat()

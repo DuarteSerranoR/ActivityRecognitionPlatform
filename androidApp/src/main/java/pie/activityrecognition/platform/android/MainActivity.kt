@@ -13,6 +13,7 @@ import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.*
+import pie.activityrecognition.platform.android.activityapiservice.ActivityRecognitionService
 import pie.activityrecognition.platform.android.sensorsservice.SensorsService
 import java.lang.Exception
 
@@ -53,55 +54,143 @@ class MainActivity: AppCompatActivity() {
      *
      * */
 
-    private lateinit var serviceIntent: Intent
+    private lateinit var sensorServiceIntent: Intent
+    private lateinit var activityRecognitionServiceIntent: Intent
     private lateinit var mSensorsService: SensorsService
+    private lateinit var mActivityRecognitionService: ActivityRecognitionService
     private val scope = MainScope()
     override fun onStart() {
         super.onStart()
         // Bind to Service
-        bindService(serviceIntent, mConnection, Context.BIND_AUTO_CREATE)
+        bindService(sensorServiceIntent, mSensorConnection, Context.BIND_AUTO_CREATE)
+        bindService(activityRecognitionServiceIntent, mActivityRecognitionConnection, Context.BIND_AUTO_CREATE)
     }
 
-    var mBound = false
-    private val mConnection = object : ServiceConnection {
+    var mSensorBound = false
+    private val mSensorConnection = object : ServiceConnection {
         // Called when the connection with the service is established
         @SuppressLint("SetTextI18n")
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             // Because we have bound to an explicit
             // service that is running in our own process, we can
             // cast its IBinder to a concrete class and directly access it.
-            val binder = service as SensorsService.LocalBinder
-            mSensorsService = binder.getService()
-            mBound = true
-            if (mSensorsService.running) {
-                angleTxt.text = "Angle: " + mSensorsService.angle + "º"
-                directionTxt.text = "Direction: " + mSensorsService.direction
-                shakeTxt.text = "Shake: " + mSensorsService.shake
-                temperatureTxt.text = "Temperature: " + mSensorsService.temperatureStatus
-                weatherTxt.text = "Weather: " + mSensorsService.weather
-                sickTxt.text = "Sick: " + mSensorsService.sick
+            val sensorsBinder = service as SensorsService.LocalBinder
+            mSensorsService = sensorsBinder.getService()
+            mSensorBound = true
+            if (mSensorsService.running) { // TODO - do the same to the google api
+                updateCurrentValues()
             } else {
-                angleTxt.text = "Angle: NaN"
-                directionTxt.text = "Direction: NaN"
-                shakeTxt.text = "Shake: NaN"
-                temperatureTxt.text = "Temperature: NaN"
-                weatherTxt.text = "Weather: NaN"
-                sickTxt.text = "Sick: NaN"
+                updateNaNValues()
             }
         }
 
         // Called when the connection with the service disconnects unexpectedly
         override fun onServiceDisconnected(className: ComponentName) {
-            //Log.e(TAG, "onServiceDisconnected")
-            mBound = false
+            println("Disconnected SensorService")
+            mSensorBound = false
         }
+    }
+
+    var mActivityRecognitionBound = false
+    private val mActivityRecognitionConnection = object : ServiceConnection {
+        // Called when the connection with the service is established
+        @SuppressLint("SetTextI18n")
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            // Because we have bound to an explicit
+            // service that is running in our own process, we can
+            // cast its IBinder to a concrete class and directly access it.
+            val activityRecognitionBinder = service as ActivityRecognitionService.LocalBinder
+            mActivityRecognitionService = activityRecognitionBinder.getService()
+            mActivityRecognitionBound = true
+            // TODO - do the same to the google api (get the values)
+        }
+
+        // Called when the connection with the service disconnects unexpectedly
+        override fun onServiceDisconnected(className: ComponentName) {
+            println("Disconnected ActivityRecognitionService")
+            mActivityRecognitionBound = false
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun updateNaNValues() {
+        angleTxt.text = "Angle: NaN"
+        directionTxt.text = "Direction: NaN"
+        shakeTxt.text = "Shake: NaN"
+        temperatureTxt.text = "Temperature: NaN"
+        weatherTxt.text = "Weather: NaN"
+        sickTxt.text = "Sick: NaN"
+        lightTxt.text = "Light: NaN"
+        sleepTxt.text = "Sleep: NaN"
+        //soundTxt.text = "Sound: NaN"
+
+        //runTxt.text = "Running: NaN"
+        //runPTxt.text = "Running Percentage: NaN"
+        //walkTxt.text = "Walking: NaN"
+        //walkPTxt.text = "Walking Percentage: NaN"
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun updateCurrentValues() {
+        if (mSensorsService.hasMagnetometerSensor && mSensorsService.hasAccelerometerSensor)
+            angleTxt.text = "Angle: " + mSensorsService.angle + "º"
+        else
+            angleTxt.text = "Sensors: Magnetometer '" + mSensorsService.hasMagnetometerSensor + "'; "+
+                    "Accelerometer '" + mSensorsService.hasAccelerometerSensor + "'."
+
+        if (mSensorsService.hasMagnetometerSensor && mSensorsService.hasAccelerometerSensor)
+            directionTxt.text = "Direction: " + mSensorsService.direction
+        else
+            directionTxt.text = "Sensors: Magnetometer '" + mSensorsService.hasMagnetometerSensor + "'; "+
+                    "Accelerometer '" + mSensorsService.hasAccelerometerSensor + "'."
+
+        if (mSensorsService.hasAccelerometerSensor)
+            shakeTxt.text = "Shake: " + mSensorsService.shake
+        else
+            shakeTxt.text = "No Accelerometer sensor was found on your device."
+
+        if (mSensorsService.hasAmbientTemperatureSensor)
+            temperatureTxt.text = "Temperature: " + mSensorsService.temperatureStatus
+        else
+            temperatureTxt.text = "No Temperature Sensor."
+
+        if (mSensorsService.hasAmbientTemperatureSensor && mSensorsService.hasRelHumiditySensor)
+            weatherTxt.text = "Weather: " + mSensorsService.weather
+        else
+            weatherTxt.text = "Sensors: AmbientTemperature '" + mSensorsService.hasAmbientTemperatureSensor + "'; "+
+                    "RelativeHumidity '" + mSensorsService.hasRelHumiditySensor + "'."
+
+        if (mSensorsService.hasAmbientTemperatureSensor && mSensorsService.hasRelHumiditySensor)
+            sickTxt.text = "Sick: " + mSensorsService.sick
+        else
+            sickTxt.text = "Sensors: AmbientTemperature '" + mSensorsService.hasAmbientTemperatureSensor + "'; "+
+                    "RelativeHumidity '" + mSensorsService.hasRelHumiditySensor + "'."
+
+        if (mSensorsService.hasLightSensor)
+            lightTxt.text = "Light: " + mSensorsService.light
+        else
+            lightTxt.text = "No Light Sensors detected."
+
+        if (mSensorsService.hasLightSensor)
+            sleepTxt.text = "Sleep: The target is " + mSensorsService.sleepStatus + "."
+        else
+            sleepTxt.text = "No Light Sensors detected."
+
+        //if (mSensorsService.hasLightSensor)
+        //    soundTxt.text = "Sound: " + mSensorsService.sound + ""
+        //else
+        //    soundTxt.text = "No Light Sensors detected, we skip sound."
+
+        //runTxt.text = "Running: "
+        //runPTxt.text = "Running Percentage: "
+        //walkTxt.text = "Walking: "
+        //walkPTxt.text = "Walking Percentage: "
     }
 
     override fun onStop() {
         super.onStop()
-        unbindService(mConnection)
+        unbindService(mSensorConnection)
     }
-
 
     private lateinit var directionTxt: TextView
     private lateinit var sickTxt: TextView
@@ -109,15 +198,31 @@ class MainActivity: AppCompatActivity() {
     private lateinit var temperatureTxt: TextView
     private lateinit var weatherTxt: TextView
     private lateinit var shakeTxt: TextView
+    private lateinit var lightTxt: TextView
+    private lateinit var sleepTxt: TextView
+    //private lateinit var soundTxt: TextView
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        /* // TODO - this requires a valid policy url to justify the use of audio recording
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+        {
+            val permissions =
+                arrayOf(Manifest.permission.RECORD_AUDIO)
 
-        serviceIntent = Intent(this, SensorsService::class.java)
-        // Start Service
-        startService(serviceIntent)
+            ActivityCompat.requestPermissions(this, permissions,0)
+        }
+        */
+        // this.checkSelfPermission("com.google.android.gms.permission.ACTIVITY_RECOGNITION")
+
+        sensorServiceIntent = Intent(this, SensorsService::class.java)
+        activityRecognitionServiceIntent = Intent(this, ActivityRecognitionService::class.java)
+
+        // Start Services
+        startService(sensorServiceIntent)
+        startService(activityRecognitionServiceIntent)
 
         // Get UI
         angleTxt = findViewById(R.id.angleTxt)
@@ -126,96 +231,13 @@ class MainActivity: AppCompatActivity() {
         temperatureTxt = findViewById(R.id.temperatureTxt)
         weatherTxt = findViewById(R.id.weatherTxt)
         sickTxt = findViewById(R.id.sickTxt)
+        lightTxt = findViewById(R.id.lightTxt)
+        sleepTxt = findViewById(R.id.sleepTxt)
+        //soundTxt = findViewById(R.id.soundTxt)
 
-        angleTxt.text = "Angle: NaN"
-        directionTxt.text = "Direction: NaN"
-        shakeTxt.text = "Shake: NaN"
-        temperatureTxt.text = "Temperature: NaN"
-        weatherTxt.text = "Weather: NaN"
-        sickTxt.text = "Sick: NaN"
+        updateNaNValues()
 
         try {
-
-            // Google's ActivityRecognition API:
-            /*
-            val transitions = mutableListOf<ActivityTransition>()
-
-            // Running
-            transitions +=
-                ActivityTransition.Builder()
-                    .setActivityType(DetectedActivity.RUNNING)
-                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                    .build()
-            transitions +=
-                ActivityTransition.Builder()
-                    .setActivityType(DetectedActivity.RUNNING)
-                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                    .build()
-
-            // Walking
-            transitions +=
-                ActivityTransition.Builder()
-                    .setActivityType(DetectedActivity.WALKING)
-                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_ENTER)
-                    .build()
-            transitions +=
-                ActivityTransition.Builder()
-                    .setActivityType(DetectedActivity.WALKING)
-                    .setActivityTransition(ActivityTransition.ACTIVITY_TRANSITION_EXIT)
-                    .build()
-
-
-            val request = ActivityTransitionRequest(transitions)
-
-            // The execution
-
-            ////------
-            val updatedIntent = Intent(applicationContext, MainActivity::class.java)
-            /*.apply {
-            action = NOTIFICATION_ACTION
-            data = differentDeepLink
-        }*/
-            // Because we're passing `FLAG_UPDATE_CURRENT`, this updates
-            // the existing PendingIntent with the changes we made above.
-            val NOTIFICATION_REQUEST_CODE = 200;
-            val googleApiPendingIntent = PendingIntent.getActivity(
-                applicationContext,
-                NOTIFICATION_REQUEST_CODE,
-                updatedIntent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            )
-            // The PendingIntent has been updated.
-            ////------
-
-            // myPendingIntent is the instance of PendingIntent where the app receives callbacks.
-            val task = ActivityRecognitionClient(this).requestActivityTransitionUpdates(request,
-                TransitionsReceiver.getPendingIntent(this))
-            //ActivityRecognition.getClient(this) // this = context
-            //    .requestActivityTransitionUpdates(request, googleApiPendingIntent)
-
-            task.addOnSuccessListener {
-                // Handle success
-            }
-
-            task.addOnFailureListener { e: Exception ->
-                // Handle error
-            }
-
-            // ON TERMINATION OF THE APP!!
-            // myPendingIntent is the instance of PendingIntent where the app receives callbacks.
-            val taskRemoval = ActivityRecognitionAPI.getClient(this)
-                .removeActivityTransitionUpdates(googleApiPendingIntent)
-
-            taskRemoval.addOnSuccessListener {
-                googleApiPendingIntent.cancel()
-            }
-
-            taskRemoval.addOnFailureListener { e: Exception ->
-                //Log.e("MYCOMPONENT", e.message)
-                Log.e("MYCOMPONENT", "error")
-            }
-            */
-
             // Listen to the variables - didn't know how to setup a listener in a right way,
             // so did a loop
             startUIUpdatesCoroutine()
@@ -232,14 +254,10 @@ class MainActivity: AppCompatActivity() {
             while (true) {
                 try {
                     delay(10L)
-                    if (mBound && mSensorsService.running) {
-                        angleTxt.text = "Angle: " + mSensorsService.angle + "º"
-                        directionTxt.text = "Direction: " + mSensorsService.direction
-                        shakeTxt.text = "Shake: " + mSensorsService.shake
-                        temperatureTxt.text = "Temperature: " + mSensorsService.temperatureStatus
-                        weatherTxt.text = "Weather: " + mSensorsService.weather
-                        sickTxt.text = "Sick: " + mSensorsService.sick
+                    if (mSensorBound && mSensorsService.running) {
+                        updateCurrentValues()
                     }
+                    // TODO - do the google api
                 } catch (e: Exception) {
                     println(e)
                 }
@@ -248,29 +266,15 @@ class MainActivity: AppCompatActivity() {
     }
 
     @Suppress("UNUSED_PARAMETER")
-    @SuppressLint("SetTextI18n")
     fun resumeReadings(view: View) {
         mSensorsService.resumeReading()
-        angleTxt.text = "Angle: " + mSensorsService.angle + "º"
-        directionTxt.text = "Direction: " + mSensorsService.direction
-        shakeTxt.text = "Shake: " + mSensorsService.shake
-        temperatureTxt.text = "Temperature: " + mSensorsService.temperatureStatus
-        weatherTxt.text = "Weather: " + mSensorsService.weather
-        sickTxt.text = "Sick: " + mSensorsService.sick
+        updateCurrentValues()
     }
 
     @Suppress("UNUSED_PARAMETER")
     @SuppressLint("SetTextI18n")
     fun pauseReadings(view: View) {
         mSensorsService.pauseReading()
-        angleTxt.text = "Angle: NaN"
-        directionTxt.text = "Direction: NaN"
-        shakeTxt.text = "Shake: NaN"
-        temperatureTxt.text = "Temperature: NaN"
-        weatherTxt.text = "Weather: NaN"
-        sickTxt.text = "Sick: NaN"
+        updateNaNValues()
     }
-
 }
-
-

@@ -9,8 +9,10 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Binder
 import android.os.IBinder
+import java.util.concurrent.TimeUnit
 import kotlin.math.roundToLong
 import kotlin.math.sqrt
+
 
 class SensorsService : Service(), SensorEventListener {
 
@@ -19,9 +21,19 @@ class SensorsService : Service(), SensorEventListener {
 
     // Configurations
 
-    private val defaultSDurationTime = 600 // seconds while sick
-    private val defaultSTime = 120 // seconds to be sick
-    private val shakeRepNum = 20 // Duration of shake activation
+    companion object {
+        private const val defaultSDurationTime = 600 // seconds while sick
+        private const val defaultSTime = 120 // seconds to be sick
+        private const val shakeRepNum = 20 // Duration of shake activation
+        //private const val sleepMinAmplitude: Int = 100 // Defines the minimum amplitude
+                                                        // for it to be sleepy
+        private const val sleepyTime: Long = 20 // How long it will be sleepy before falling asleep
+
+        // For audio
+        //private const val sampleRate = 48000
+        //private const val channelConfig = AudioFormat.CHANNEL_IN_MONO
+        //private const val audioFormat = AudioFormat.ENCODING_PCM_16BIT
+    }
 
 
 
@@ -31,6 +43,20 @@ class SensorsService : Service(), SensorEventListener {
     override fun onCreate() {
         super.onCreate()
 
+        // Permission check for audio recording
+        /*
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+        ) {
+            mRecorder = AudioRecord(MediaRecorder.AudioSource.MIC,
+                sampleRate,
+                channelConfig,
+                audioFormat,
+                minBufferSize * 10)
+        }
+         */
+
+        // Initialization of other services
         acceleration = 10f
         currentAcceleration = SensorManager.GRAVITY_EARTH
         lastAcceleration = SensorManager.GRAVITY_EARTH
@@ -40,12 +66,26 @@ class SensorsService : Service(), SensorEventListener {
         this.mRelHumidity = mSensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY)
         this.mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         this.mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        this.mLight = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+
+        if (mAccelerometer == null)
+            hasAccelerometerSensor = false
+        if (mRelHumidity == null)
+            hasRelHumiditySensor = false
+        if (mMagnetometer == null)
+            hasMagnetometerSensor = false
+        if (mAmbientTemperature == null)
+            hasAmbientTemperatureSensor = false
+        if (mLight == null)
+            hasLightSensor = false
+
         //resumeReading()
     }
 
     override fun onDestroy() {
         if (running)
             pauseReading()
+        //mRecorder?.release()
         super.onDestroy()
     }
 
@@ -76,15 +116,18 @@ class SensorsService : Service(), SensorEventListener {
 
     private lateinit var mSensorManager : SensorManager
 
-    private lateinit var mAmbientTemperature : Sensor
+    private var mAmbientTemperature : Sensor? = null
+    var hasAmbientTemperatureSensor : Boolean = true
     private var temperatureReading: Float = Float.NaN
 
-    private lateinit var mRelHumidity : Sensor
+    private var mRelHumidity : Sensor? = null
+    var hasRelHumiditySensor : Boolean = true
     private var humidityReading: Float = Float.NaN
     private var sicknessStartTimer = System.nanoTime()
     private var sTimerStarted = false
 
-    private lateinit var mAccelerometer : Sensor
+    private var mAccelerometer : Sensor? = null
+    var hasAccelerometerSensor : Boolean = true
     private val accelerometerReading = FloatArray(3)
     private val rotationMatrix = FloatArray(9)
     private val orientationAngle = FloatArray(9)
@@ -93,31 +136,40 @@ class SensorsService : Service(), SensorEventListener {
     private var lastAcceleration = 0f
     private var shakeIndex = 0
 
-    private lateinit var mMagnetometer : Sensor
+    private var mMagnetometer : Sensor? = null
+    var hasMagnetometerSensor : Boolean = true
     private val magnetometerReading = FloatArray(3)
 
-    //private lateinit var mLight : Sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+    private var mLight : Sensor? = null
+    var hasLightSensor : Boolean = true
+    private var sleepyElapsed : Long = 0
 
-
+    // Audio Recorder
+    //private val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
+    //private var mRecorder: AudioRecord? = null
 
 
     // Usable information and functions
 
     var running = false
 
-    var angle: Long = 0 // TODO - use?
-    var direction: String = "N" // TODO - use
-    var shake: Boolean = false // TODO - use
+    var angle: Long = 0
+    var direction: String = "N"
+    var shake: Boolean = false
 
-    var temperatureStatus: String = "comfortable" // TODO - use
+    var temperatureStatus: String = "comfortable"
 
-    var weather: String = "Not raining" // TODO - use
+    var weather: String = "Not raining"
                              // TODO - try out using the pressure sensor also?
                              // TODO - we could say that with 60% humidity it could be raining
                              //         (67% humidity = 70% rain; 73% humidity = 70% rain; 75% humidity = 80% rain;)
                              //         - but this is too speculative and not accurate at all. The T0D0 is to find a better solution.
 
-    var sick: Boolean = false // TODO - use
+    var sick: Boolean = false
+
+    var sleepStatus : String = "Awake" // TODO - use enumerable objects here and in the weather reading?
+    var light : Float = 0f
+    var sound: Double = 0.0
 
 
 
@@ -128,12 +180,14 @@ class SensorsService : Service(), SensorEventListener {
         mSensorManager.registerListener(this, mRelHumidity, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager.registerListener(this, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL)
         mSensorManager.registerListener(this, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL)
-        //mSensorManager.registerListener(this, mLight, SensorManager.SENSOR_DELAY_NORMAL)
+        mSensorManager.registerListener(this, mLight, SensorManager.SENSOR_DELAY_NORMAL)
+        //mRecorder?.startRecording()
     }
 
     fun pauseReading() {
         running = false
         mSensorManager.unregisterListener(this)
+        //mRecorder?.stop()
     }
 
 
@@ -147,7 +201,7 @@ class SensorsService : Service(), SensorEventListener {
 
     override fun onSensorChanged(event: SensorEvent?) { // https://mdpi-res.com/d_attachment/sensors/sensors-15-17827/article_deploy/sensors-15-17827-v2.pdf?version=1438068266
 
-        if (event != null && running) {
+        if (event?.values != null && running) {
             when (event.sensor.type) {
                 Sensor.TYPE_AMBIENT_TEMPERATURE -> {
 
@@ -193,12 +247,35 @@ class SensorsService : Service(), SensorEventListener {
                     System.arraycopy(event.values, 0, magnetometerReading, 0, magnetometerReading.size)
                     updateOrientationAngles()
                 }
+                Sensor.TYPE_LIGHT -> {
+                    light = event.values[0]
+                    /*if (mRecorder != null) {
+                        checkSleepWAudio()
+                        mRecorder?.stop()
+                        mRecorder?.release()
+                        mRecorder?.startRecording()
+                    }
+                    else {*/
+                    checkSleep()
+                    //}
+                }
             }
 
             if (event.sensor.type == Sensor.TYPE_ACCELEROMETER || event.sensor.type == Sensor.TYPE_MAGNETIC_FIELD)
                 updateOrientationAngles()
             else if (event.sensor.type == Sensor.TYPE_AMBIENT_TEMPERATURE || event.sensor.type == Sensor.TYPE_RELATIVE_HUMIDITY)
                 checkAndUpdateSicknessCounter()
+
+            if (mAccelerometer == null)
+                hasAccelerometerSensor = false
+            if (mRelHumidity == null)
+                hasRelHumiditySensor = false
+            if (mMagnetometer == null)
+                hasMagnetometerSensor = false
+            if (mAmbientTemperature == null)
+                hasAmbientTemperatureSensor = false
+            if (mLight == null)
+                hasLightSensor = false
         }
     }
 
@@ -259,5 +336,45 @@ class SensorsService : Service(), SensorEventListener {
         else if (shake && shakeIndex >= shakeRepNum)
             shake = false
     }
+
+    private fun checkSleep() {
+        if (light < 4 && sleepStatus == "Awake") {
+            sleepyElapsed = TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
+            sleepStatus = "Sleepy"
+        }
+        else if (light > 4) {
+            sleepStatus = "Awake"
+        }
+
+        val currentTimeSecs = TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
+        val sleepySecs: Long = currentTimeSecs - sleepyElapsed
+        if (sleepySecs > sleepyTime && sleepStatus == "Sleepy") {
+            sleepStatus = "Sleeping"
+        }
+    }
+    /*
+    private fun checkSleepWAudio() {
+        sound = getMaxAmplitude().toDouble()
+        if (light < 4 && sound < sleepMinAmplitude) {
+            sleepyElapsed = TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
+            sleepStatus = "Sleepy"
+        }
+        else if (light > 4 || sound > sleepMinAmplitude) {
+            sleepStatus = "Awake"
+        }
+
+        val currentTimeSecs = TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
+        val sleepySecs: Long = currentTimeSecs - sleepyElapsed
+        if (sleepySecs < sleepyTime && sleepStatus == "Sleepy") {
+            sleepStatus = "Sleeping"
+        }
+    }
+
+    private fun getMaxAmplitude() : Float {
+        //mRecorder
+        return 0f // TODO - this would get the maximum amplitude,
+                      but due to the policy restrictions, sound processing was not implemented.
+    }
+    */
 }
 

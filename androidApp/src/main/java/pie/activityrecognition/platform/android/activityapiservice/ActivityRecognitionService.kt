@@ -1,11 +1,15 @@
 package pie.activityrecognition.platform.android.activityapiservice
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
+import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.*
 
 
@@ -22,16 +26,23 @@ class ActivityRecognitionService : Service() {
         super.onCreate()
 
         client = ActivityRecognition.getClient(this)
+        requestForUpdates()
+
     }
 
-    @SuppressLint("UnspecifiedImmutableFlag")
+    override fun onDestroy() {
+        removeUpdates()
+        deregisterForUpdates()
+        super.onDestroy()
+    }
+
     private fun getPendingIntent(): PendingIntent {
         val intent = Intent(this, ActivityTransitionReceiver::class.java)
         return PendingIntent.getBroadcast(
             this,
             ActivityTransitionUtils.REQUEST_CODE_INTENT_ACTIVITY_TRANSITION,
             intent,
-            PendingIntent.FLAG_UPDATE_CURRENT
+            PendingIntent.FLAG_IMMUTABLE
         )
     }
 
@@ -61,20 +72,54 @@ class ActivityRecognitionService : Service() {
     // Google's Activity Recognition Functions
 
     private fun requestForUpdates() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                println("Permission not granted for the use of the google's ActivityRecognitionAPI!")
+                return
+            }
         client.requestActivityTransitionUpdates(
             ActivityTransitionUtils.getActivityTransitionRequest(),
             getPendingIntent()
         )
         .addOnSuccessListener {
-            //showToast("successful registration")
+            println("Successful registration")
         }
         .addOnFailureListener { e: Exception ->
-            //showToast("Unsuccessful registration")
+            println("Unsuccessful registration with exception: " + e.message)
         }
     }
 
+    private fun deregisterForUpdates() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACTIVITY_RECOGNITION)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                println("Permission not granted for the use of the google's ActivityRecognitionAPI!")
+                return
+            }
+
+        client
+            .removeActivityTransitionUpdates(getPendingIntent())
+            .addOnSuccessListener {
+                getPendingIntent().cancel()
+                println("successful deregistration")
+            }
+            .addOnFailureListener { e: Exception ->
+                println("unsuccessful deregistration")
+            }
+    }
+
     private fun removeUpdates() {
-        TODO("Not yet implemented")
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            println("No Activity Recognition permissions!")
+            return
+        }
+        client.removeActivityUpdates(getPendingIntent())
     }
 
 }

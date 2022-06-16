@@ -36,7 +36,7 @@
     <TextView
         android:id="@+id/directionTxt"
         android:layout_width="380dp"
-        android:layout_height="42dp"
+        android:layout_height="70dp"
         android:layout_marginStart="24dp"
         android:textAlignment="viewStart"
         android:textSize="24sp"
@@ -48,20 +48,55 @@
     <TextView
         android:id="@+id/sickTxt"
         android:layout_width="380dp"
-        android:layout_height="42dp"
+        android:layout_height="70dp"
         android:layout_marginStart="24dp"
         android:textAlignment="viewStart"
         android:textSize="24sp"
+        app:layout_constraintBottom_toTopOf="@+id/lightTxt"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/weatherTxt"
         tools:text="Sick: NaN" />
 
-    <TextView
-        android:id="@+id/angleTxt"
+    <!--TextView
+        android:id="@+id/soundTxt"
         android:layout_width="380dp"
         android:layout_height="42dp"
         android:layout_marginStart="24dp"
-        android:layout_marginTop="163dp"
+        android:layout_marginTop="120dp"
+        android:textAlignment="viewStart"
+        android:textSize="24sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/weatherTxt"
+        tools:text="Sound: NaN" /-->
+
+    <TextView
+        android:id="@+id/lightTxt"
+        android:layout_width="380dp"
+        android:layout_height="70dp"
+        android:layout_marginStart="24dp"
+        android:textAlignment="viewStart"
+        android:textSize="24sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sickTxt"
+        tools:text="Light: NaN" />
+
+    <TextView
+        android:id="@+id/sleepTxt"
+        android:layout_width="380dp"
+        android:layout_height="70dp"
+        android:layout_marginStart="24dp"
+        android:textAlignment="viewStart"
+        android:textSize="24sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/lightTxt"
+        tools:text="Sleep: NaN" />
+
+    <TextView
+        android:id="@+id/angleTxt"
+        android:layout_width="380dp"
+        android:layout_height="70dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="32dp"
         android:textAlignment="viewStart"
         android:textSize="24sp"
         app:layout_constraintBottom_toTopOf="@+id/directionTxt"
@@ -72,7 +107,7 @@
     <TextView
         android:id="@+id/temperatureTxt"
         android:layout_width="380dp"
-        android:layout_height="42dp"
+        android:layout_height="70dp"
         android:layout_marginStart="24dp"
         android:textAlignment="viewStart"
         android:textSize="24sp"
@@ -84,7 +119,7 @@
     <TextView
         android:id="@+id/weatherTxt"
         android:layout_width="380dp"
-        android:layout_height="42dp"
+        android:layout_height="70dp"
         android:layout_marginStart="24dp"
         android:textAlignment="viewStart"
         android:textSize="24sp"
@@ -96,7 +131,7 @@
     <TextView
         android:id="@+id/shakeTxt"
         android:layout_width="380dp"
-        android:layout_height="42dp"
+        android:layout_height="70dp"
         android:layout_marginStart="24dp"
         android:textAlignment="viewStart"
         android:textSize="24sp"
