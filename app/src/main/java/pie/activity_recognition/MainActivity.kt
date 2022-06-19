@@ -290,6 +290,15 @@ class MainActivity: AppCompatActivity() {
     fun resumeReadings(view: View) {
         val cb = binding.root.findViewById<CheckBox>(R.id.home_service_status_bool)
         cb.isChecked = true
+        /* TODO
+        * Missing sensors:
+        *  - Ambient Temperature
+        *  - Relative Humidity
+        *  - Accelerometer
+        *  - Magnetometer
+        *  - Light
+        *  - Audio
+        * */
         mSensorsService.resumeReading()
         updateCurrentValues()
     }
