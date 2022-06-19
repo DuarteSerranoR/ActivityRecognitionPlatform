@@ -1,4 +1,4 @@
-package pie.activityrecognition.platform.android.ui.notifications
+package pie.activityrecognition.platform.android.ui.configurations
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData

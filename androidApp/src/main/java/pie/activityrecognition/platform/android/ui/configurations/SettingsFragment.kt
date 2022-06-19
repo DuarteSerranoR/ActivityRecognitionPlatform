@@ -1,4 +1,4 @@
-package pie.activityrecognition.platform.android.ui.notifications
+package pie.activityrecognition.platform.android.ui.configurations
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -22,16 +22,18 @@ class ConfigurationsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val notificationsViewModel =
-            ViewModelProvider(this)[ConfigurationsViewModel::class.java]
+        //val configurationsViewModel =
+        //    ViewModelProvider(this)[ConfigurationsViewModel::class.java]
 
         _binding = FragmentConfigurationsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val textView: TextView = binding.textNotifications
-        notificationsViewModel.text.observe(viewLifecycleOwner) {
+        /*
+        val textView: TextView = binding.textConfigurations
+        configurationsViewModel.text.observe(viewLifecycleOwner) {
             textView.text = it
         }
+         */
         return root
     }
 
