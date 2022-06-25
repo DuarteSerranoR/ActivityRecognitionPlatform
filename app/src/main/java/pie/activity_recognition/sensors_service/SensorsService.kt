@@ -61,15 +61,13 @@ class SensorsService : Service(), SensorEventListener {
 
         // Permission check for audio recording
 
-        if (ActivityCompat.checkSelfPermission(this,
+        audioPermissions = if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         ) {
-            mRecorder = AudioRecord(MediaRecorder.AudioSource.MIC,
-                sampleRate,
-                channelConfig,
-                audioFormat,
-                minBufferSize * 10)
-            startAudioStream()
+            initRecorder()
+            true
+        } else {
+            false
         }
 
 
@@ -160,6 +158,7 @@ class SensorsService : Service(), SensorEventListener {
     private var mLight : Sensor? = null
     var hasLightSensor : Boolean = true
     private var sleepyElapsed : Long = 0
+    var audioPermissions : Boolean = false
 
     // Audio Recorder
     private val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
@@ -211,6 +210,31 @@ class SensorsService : Service(), SensorEventListener {
         mRecorder?.stop()
     }
 
+    private fun checkPermissions() {
+        if (!audioPermissions && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            audioPermissions = true
+            initRecorder()
+        } else if (audioPermissions && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            destroyRecorder()
+            audioPermissions = false
+        }
+    }
+
+    private fun initRecorder() {
+        mRecorder = AudioRecord(MediaRecorder.AudioSource.MIC,
+            sampleRate,
+            channelConfig,
+            audioFormat,
+            minBufferSize * 10)
+        startAudioStream()
+    }
+
+    private fun destroyRecorder() {
+        mRecorder = null
+    }
+
 
 
 
@@ -223,6 +247,7 @@ class SensorsService : Service(), SensorEventListener {
     override fun onSensorChanged(event: SensorEvent?) { // https://mdpi-res.com/d_attachment/sensors/sensors-15-17827/article_deploy/sensors-15-17827-v2.pdf?version=1438068266
 
         if (event?.values != null && running) {
+            checkPermissions()
             when (event.sensor.type) {
                 Sensor.TYPE_AMBIENT_TEMPERATURE -> {
 
@@ -245,12 +270,16 @@ class SensorsService : Service(), SensorEventListener {
 
                     weather =
                         if (humidityReading > 60) {
-                            if (temperatureReading <= 0)
-                                "Snowing" // TODO - hail/granizo?
-                            else
-                                "Raining" // TODO - make real world comparison, or a weather website/API
+                            if (hasAmbientTemperatureSensor) {
+                                if (temperatureReading <= 0)
+                                    "Snowing" // TODO - hail/granizo?
+                                else
+                                    "Raining" // TODO - make real world comparison, or a weather website/API
+                            } else {
+                                "Raining"
+                            }
                         } else
-                            "Not raining" // TODO - sunny? Clear? Cloudy?
+                            "Not Raining" // TODO - sunny? Clear? Cloudy?
 
                     checkAndUpdateSicknessCounter()
                 }
@@ -305,6 +334,8 @@ class SensorsService : Service(), SensorEventListener {
                 delay(1000L)
                 val buffer = ShortArray(minBufferSize)
                 while (true) {
+                    if (!audioPermissions)
+                        break
                     delay(10L)
                     if (recording) {
                         var maxAmplitude = 0.0

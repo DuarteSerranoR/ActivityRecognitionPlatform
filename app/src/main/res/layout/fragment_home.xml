@@ -77,14 +77,20 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/home_service_status_txt" />
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/fragmentMissingSensorsHome"
-        android:name="pie.activity_recognition.ui.missing_sensors.MissingSensorsFragment"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@+id/start_button"
+    <TextView
+        android:id="@+id/missing_sensors_home"
+        android:layout_width="235dp"
+        android:layout_height="125dp"
+        android:layout_marginStart="85dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="85dp"
+        android:textColor="#E40000"
+        android:textStyle="bold"
+        android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/text_home" />
+        app:layout_constraintTop_toBottomOf="@+id/text_home"
+        tools:text="Missing sensors:\n - Ambient Temperature\n - Relative Humidity\n - Accelerometer\n - Magnetometer\n - Light\n - Audio" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

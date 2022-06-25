@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.view.View
 import android.widget.CheckBox
+import android.widget.TextView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -113,17 +114,15 @@ class MainActivity: AppCompatActivity() {
 
     @SuppressLint("SetTextI18n")
     private fun updateNaNValues() {
-        /* TODO
-        angleTxt.text = "Angle: NaN"
-        directionTxt.text = "Direction: NaN"
-        shakeTxt.text = "Shake: NaN"
-        temperatureTxt.text = "Temperature: NaN"
-        weatherTxt.text = "Weather: NaN"
-        sickTxt.text = "Sick: NaN"
-        lightTxt.text = "Light: NaN"
-        sleepTxt.text = "Sleep: NaN"
-        soundTxt.text = "Sound: NaN"
-        */
+        angleTxt?.text = "Angle: NaN"
+        directionTxt?.text = "Direction: NaN"
+        shakeTxt?.text = "Shake: NaN"
+        temperatureTxt?.text = "Temperature: NaN"
+        weatherTxt?.text = "Weather: NaN"
+        sickTxt?.text = "Sick: NaN"
+        lightTxt?.text = "Light: NaN"
+        sleepTxt?.text = "Sleep: NaN"
+        soundTxt?.text = "Sound: NaN"
 
         //runTxt.text = "Running: NaN"
         //runPTxt.text = "Running Percentage: NaN"
@@ -131,62 +130,93 @@ class MainActivity: AppCompatActivity() {
         //walkPTxt.text = "Walking Percentage: NaN"
     }
 
+    private fun updateMissingSensorsTxt(text: String) {
+        missingSensorsHomeTxt?.text = text
+        missingSensorsDashboardTxt?.text = text
+        missingSensorsSensorsTxt?.text = text
+    }
+
     @SuppressLint("SetTextI18n")
     private fun updateCurrentValues() {
-        /* TODO
-        if (mSensorsService.hasMagnetometerSensor && mSensorsService.hasAccelerometerSensor)
-            angleTxt.text = "Angle: " + mSensorsService.angle + "º"
-        else
-            angleTxt.text = "Sensors: Magnetometer '" + mSensorsService.hasMagnetometerSensor + "'; "+
-                    "Accelerometer '" + mSensorsService.hasAccelerometerSensor + "'."
 
-        if (mSensorsService.hasMagnetometerSensor && mSensorsService.hasAccelerometerSensor)
-            directionTxt.text = "Direction: " + mSensorsService.direction
-        else
-            directionTxt.text = "Sensors: Magnetometer '" + mSensorsService.hasMagnetometerSensor + "'; "+
-                    "Accelerometer '" + mSensorsService.hasAccelerometerSensor + "'."
+        var missingSensorsVar = ""
+
+        if (!(mSensorsService.hasAccelerometerSensor &&
+                    mSensorsService.hasMagnetometerSensor &&
+                    mSensorsService.hasAmbientTemperatureSensor &&
+                    mSensorsService.hasRelHumiditySensor &&
+                    mSensorsService.hasLightSensor &&
+                    mSensorsService.audioPermissions)
+        )
+            missingSensorsVar = "Missing Sensors or Permissions:\n"
+
+        if (!mSensorsService.hasAccelerometerSensor)
+            missingSensorsVar += "\t- Accelerometer\n"
+        if (!mSensorsService.hasMagnetometerSensor)
+            missingSensorsVar += "\t- Magnetometer\n"
+        if (!mSensorsService.hasAmbientTemperatureSensor)
+            missingSensorsVar += "\t- Ambient Temperature\n"
+        if (!mSensorsService.hasRelHumiditySensor)
+            missingSensorsVar += "\t- Relative Humidity\n"
+        if (!mSensorsService.hasLightSensor)
+            missingSensorsVar += "\t- Light"
+        if (!mSensorsService.audioPermissions)
+            missingSensorsVar += "\t- Audio Permissions\n"
+
+        updateMissingSensorsTxt(missingSensorsVar)
+
+
 
         if (mSensorsService.hasAccelerometerSensor)
-            shakeTxt.text = "Shake: " + mSensorsService.shake
+            shakeTxt?.text = "Shake: " + mSensorsService.shake
         else
-            shakeTxt.text = "No Accelerometer sensor was found on your device."
+            shakeTxt?.text = "Missing sensors!"
 
         if (mSensorsService.hasAmbientTemperatureSensor)
-            temperatureTxt.text = "Temperature: " + mSensorsService.temperatureStatus
+            temperatureTxt?.text = "Temperature: " + mSensorsService.temperatureStatus
         else
-            temperatureTxt.text = "No Temperature Sensor."
+            temperatureTxt?.text = "Missing sensors!"
+
+        if (mSensorsService.hasRelHumiditySensor)
+            weatherTxt?.text = "Weather: " + mSensorsService.weather
+        else
+            weatherTxt?.text = "Missing sensors!"
+
+        if (mSensorsService.hasLightSensor)
+            lightTxt?.text = "Light: " + mSensorsService.light
+        else
+            lightTxt?.text = "Missing sensors!"
+
+        if (mSensorsService.audioPermissions)
+            soundTxt?.text = "Sound: " + mSensorsService.sound + "db"
+        else
+            soundTxt?.text = "Missing audio permission!"
+
+
+
+        if (mSensorsService.hasMagnetometerSensor && mSensorsService.hasAccelerometerSensor) {
+            angleTxt?.text = "Angle: " + mSensorsService.angle + "º"
+            directionTxt?.text = "Direction: " + mSensorsService.direction
+        } else {
+            angleTxt?.text = "Missing sensors!"
+            directionTxt?.text = "Missing sensors!"
+        }
 
         if (mSensorsService.hasAmbientTemperatureSensor && mSensorsService.hasRelHumiditySensor)
-            weatherTxt.text = "Weather: " + mSensorsService.weather
+            sickTxt?.text = "Sick: " + mSensorsService.sick
         else
-            weatherTxt.text = "Sensors: AmbientTemperature '" + mSensorsService.hasAmbientTemperatureSensor + "'; "+
-                    "RelativeHumidity '" + mSensorsService.hasRelHumiditySensor + "'."
+            sickTxt?.text = "Missing sensors!"
 
-        if (mSensorsService.hasAmbientTemperatureSensor && mSensorsService.hasRelHumiditySensor)
-            sickTxt.text = "Sick: " + mSensorsService.sick
+        if (mSensorsService.hasLightSensor && mSensorsService.audioPermissions)
+            sleepTxt?.text = "Sleep: The target is " + mSensorsService.sleepStatus + "."
         else
-            sickTxt.text = "Sensors: AmbientTemperature '" + mSensorsService.hasAmbientTemperatureSensor + "'; "+
-                    "RelativeHumidity '" + mSensorsService.hasRelHumiditySensor + "'."
+            sleepTxt?.text = "Missing sensor or\naudio permission!"
 
-        if (mSensorsService.hasLightSensor)
-            lightTxt.text = "Light: " + mSensorsService.light
-        else
-            lightTxt.text = "No Light Sensors detected."
-
-        if (mSensorsService.hasLightSensor)
-            sleepTxt.text = "Sleep: The target is " + mSensorsService.sleepStatus + "."
-        else
-            sleepTxt.text = "No Light Sensors detected."
-
-        if (mSensorsService.hasLightSensor)
-            soundTxt.text = "Sound: " + mSensorsService.sound + ""
-        else
-            soundTxt.text = "No Light Sensors detected, we skip sound."
-        */
         //runTxt.text = "Running: "
         //runPTxt.text = "Running Percentage: "
         //walkTxt.text = "Walking: "
         //walkPTxt.text = "Walking Percentage: "
+
     }
 
     override fun onStop() {
@@ -194,15 +224,19 @@ class MainActivity: AppCompatActivity() {
         unbindService(mSensorConnection)
     }
 
-    //private lateinit var directionTxt: TextView TODO
-    //private lateinit var sickTxt: TextView
-    //private lateinit var angleTxt: TextView
-    //private lateinit var temperatureTxt: TextView
-    //private lateinit var weatherTxt: TextView
-    //private lateinit var shakeTxt: TextView
-    //private lateinit var lightTxt: TextView
-    //private lateinit var sleepTxt: TextView
-    //private lateinit var soundTxt: TextView
+    private var statusCheckBox: CheckBox? = null
+    private var missingSensorsHomeTxt: TextView? = null // TODO - find a way to create a shared component!!
+    private var missingSensorsDashboardTxt: TextView? = null
+    private var missingSensorsSensorsTxt: TextView? = null
+    private var directionTxt: TextView? = null
+    private var sickTxt: TextView? = null
+    private var angleTxt: TextView? = null
+    private var temperatureTxt: TextView? = null
+    private var weatherTxt: TextView? = null
+    private var shakeTxt: TextView? = null
+    private var lightTxt: TextView? = null
+    private var sleepTxt: TextView? = null
+    private var soundTxt: TextView? = null
 
     private lateinit var binding: ActivityMainBinding
 
@@ -250,17 +284,19 @@ class MainActivity: AppCompatActivity() {
         startService(activityRecognitionServiceIntent)
 
         // Get UI data
-        /* TODO
-        angleTxt = findViewById(R.id.angleTxt)
-        directionTxt = findViewById(R.id.directionTxt)
-        shakeTxt = findViewById(R.id.shakeTxt)
-        temperatureTxt = findViewById(R.id.temperatureTxt)
-        weatherTxt = findViewById(R.id.weatherTxt)
-        sickTxt = findViewById(R.id.sickTxt)
-        lightTxt = findViewById(R.id.lightTxt)
-        sleepTxt = findViewById(R.id.sleepTxt)
-        soundTxt = findViewById(R.id.soundTxt)
-         */
+        statusCheckBox = binding.root.findViewById(R.id.home_service_status_bool)
+        missingSensorsHomeTxt = binding.root.findViewById(R.id.missing_sensors_home)
+        missingSensorsDashboardTxt = binding.root.findViewById(R.id.missing_sensors_dashboard)
+        missingSensorsSensorsTxt = binding.root.findViewById(R.id.missing_sensors_sensors)
+        angleTxt = binding.root.findViewById(R.id.angleTxt)
+        directionTxt = binding.root.findViewById(R.id.directionTxt)
+        shakeTxt = binding.root.findViewById(R.id.shakeTxt)
+        temperatureTxt = binding.root.findViewById(R.id.temperatureTxt)
+        weatherTxt = binding.root.findViewById(R.id.weatherTxt)
+        sickTxt = binding.root.findViewById(R.id.sickTxt)
+        lightTxt = binding.root.findViewById(R.id.lightTxt)
+        sleepTxt = binding.root.findViewById(R.id.sleepTxt)
+        soundTxt = binding.root.findViewById(R.id.soundTxt)
 
         updateNaNValues()
 
@@ -274,9 +310,25 @@ class MainActivity: AppCompatActivity() {
             delay(1000L)
             while (true) {
                 try {
+                    statusCheckBox = binding.root.findViewById(R.id.home_service_status_bool)
+                    missingSensorsHomeTxt = binding.root.findViewById(R.id.missing_sensors_home)
+                    missingSensorsDashboardTxt = binding.root.findViewById(R.id.missing_sensors_dashboard)
+                    missingSensorsSensorsTxt = binding.root.findViewById(R.id.missing_sensors_sensors)
+                    angleTxt = binding.root.findViewById(R.id.angleTxt)
+                    directionTxt = binding.root.findViewById(R.id.directionTxt)
+                    shakeTxt = binding.root.findViewById(R.id.shakeTxt)
+                    temperatureTxt = binding.root.findViewById(R.id.temperatureTxt)
+                    weatherTxt = binding.root.findViewById(R.id.weatherTxt)
+                    sickTxt = binding.root.findViewById(R.id.sickTxt)
+                    lightTxt = binding.root.findViewById(R.id.lightTxt)
+                    sleepTxt = binding.root.findViewById(R.id.sleepTxt)
+                    soundTxt = binding.root.findViewById(R.id.soundTxt)
+
                     delay(10L)
                     if (mSensorBound && mSensorsService.running) {
                         updateCurrentValues()
+                    } else {
+                        updateNaNValues()
                     }
                     // TODO - do the google api
                 } catch (e: Exception) {
@@ -288,8 +340,7 @@ class MainActivity: AppCompatActivity() {
 
     @Suppress("UNUSED_PARAMETER")
     fun resumeReadings(view: View) {
-        val cb = binding.root.findViewById<CheckBox>(R.id.home_service_status_bool)
-        cb.isChecked = true
+        statusCheckBox?.isChecked = true
         /* TODO
         * Missing sensors:
         *  - Ambient Temperature
@@ -306,9 +357,9 @@ class MainActivity: AppCompatActivity() {
     @Suppress("UNUSED_PARAMETER")
     @SuppressLint("SetTextI18n")
     fun pauseReadings(view: View) {
-        val cb = binding.root.findViewById<CheckBox>(R.id.home_service_status_bool)
-        cb.isChecked = false
+        statusCheckBox?.isChecked = false
         mSensorsService.pauseReading()
+        updateMissingSensorsTxt("")
         updateNaNValues()
     }
 }
