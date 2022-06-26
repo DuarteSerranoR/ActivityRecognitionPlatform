@@ -18,4 +18,5 @@
 
     <!-- Static Text -->
     <string name="service_status">Active</string>
+    <string name="compassImgDescription">Image representing the physical compass.</string>
 </resources>

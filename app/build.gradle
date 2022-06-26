@@ -10,8 +10,8 @@ android {
         applicationId "pie.activity_recognition"
         minSdk 28
         targetSdk 32
-        versionCode 20
-        versionName "Alpha-0.1.1"
+        versionCode 22
+        versionName "Alpha-0.2.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

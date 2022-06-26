@@ -26,27 +26,14 @@
         android:id="@+id/compassBtn"
         android:layout_width="120dp"
         android:layout_height="59dp"
+        android:onClick="compassClick"
         android:textSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.211"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.837"
         tools:text="Show Compass" />
-
-    <Button
-        android:id="@+id/foodBtn"
-        android:layout_width="120dp"
-        android:layout_height="59dp"
-        android:text="@string/feed_btn"
-        android:textSize="16sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.792"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.837" />
 
     <TextView
         android:id="@+id/mainTxt"
@@ -55,10 +42,28 @@
         android:layout_marginStart="88dp"
         android:layout_marginTop="100dp"
         android:layout_marginEnd="88dp"
+        android:visibility="visible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="This text contains all the processed and filtered information, converted into text format." />
+        tools:text="This text contains all the processed and filtered information, converted into text format."
+        tools:visibility="visible" />
+
+    <ImageView
+        android:id="@+id/compassImg"
+        android:layout_width="279dp"
+        android:layout_height="296dp"
+        android:layout_marginStart="66dp"
+        android:layout_marginTop="60dp"
+        android:layout_marginEnd="66dp"
+        android:contentDescription="@string/compassImgDescription"
+        android:interpolator="@anim/linear_interpolator"
+        android:src="@drawable/compass"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="invisible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -10,7 +10,9 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
 import android.view.View
+import android.widget.Button
 import android.widget.CheckBox
+import android.widget.ImageView
 import android.widget.TextView
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
@@ -56,8 +58,7 @@ class MainActivity: AppCompatActivity() {
      *              https://developer.android.com/training/wearables/health-services/health-platform
      *  DEPRECATED TO HEALTH CONNECT ->
      *              https://developer.android.com/guide/health-and-fitness/health-connect
-     *
-     * TODO - Use the sensors to stipulate the energy consumed by the user, and make a
+     *  Use the sensors to stipulate the energy consumed by the user, and make a
      *  hunger meter.
      *
      * */
@@ -87,9 +88,9 @@ class MainActivity: AppCompatActivity() {
             mSensorsService = sensorsBinder.getService()
             mSensorBound = true
             if (mSensorsService.running) { // TODO - do the same to the google api
-                updateCurrentValues()
+                updateSensorValues()
             } else {
-                updateNaNValues()
+                updateSensorsNaNValues()
             }
         }
 
@@ -122,7 +123,8 @@ class MainActivity: AppCompatActivity() {
     }
 
     @SuppressLint("SetTextI18n")
-    private fun updateNaNValues() {
+    private fun updateSensorsNaNValues() {
+        compassBtn?.isEnabled = false
         angleTxt?.text = "Angle: NaN"
         directionTxt?.text = "Direction: NaN"
         shakeTxt?.text = "Shake: NaN"
@@ -145,14 +147,35 @@ class MainActivity: AppCompatActivity() {
         missingSensorsSensorsTxt?.text = text
     }
 
-    private fun initMissingSensorsTxt() {
+    // For view changes
+    private fun updateCurrentUI() {
+        // Home
+        statusCheckBox = binding.root.findViewById(R.id.home_service_status_bool)
+
+        // Dashboards
+        mainTxt = binding.root.findViewById(R.id.mainTxt)
+        compassImg = binding.root.findViewById(R.id.compassImg)
+        compassBtn = binding.root.findViewById(R.id.compassBtn)
+
+        // Sensors
+        angleTxt = binding.root.findViewById(R.id.angleTxt)
+        directionTxt = binding.root.findViewById(R.id.directionTxt)
+        shakeTxt = binding.root.findViewById(R.id.shakeTxt)
+        temperatureTxt = binding.root.findViewById(R.id.temperatureTxt)
+        weatherTxt = binding.root.findViewById(R.id.weatherTxt)
+        sickTxt = binding.root.findViewById(R.id.sickTxt)
+        lightTxt = binding.root.findViewById(R.id.lightTxt)
+        sleepTxt = binding.root.findViewById(R.id.sleepTxt)
+        soundTxt = binding.root.findViewById(R.id.soundTxt)
+
+        // Shared
         missingSensorsHomeTxt = binding.root.findViewById(R.id.missing_sensors_home)
         missingSensorsDashboardTxt = binding.root.findViewById(R.id.missing_sensors_dashboard)
         missingSensorsSensorsTxt = binding.root.findViewById(R.id.missing_sensors_sensors)
     }
 
     @SuppressLint("SetTextI18n")
-    private fun updateCurrentValues() {
+    private fun updateSensorValues() {
 
         var missingSensorsVar = ""
 
@@ -182,10 +205,14 @@ class MainActivity: AppCompatActivity() {
 
 
 
-        if (mSensorsService.hasAccelerometerSensor)
+        if (mSensorsService.hasAccelerometerSensor) {
             shakeTxt?.text = "Shake: " + mSensorsService.shake
-        else
+            compassBtn?.isEnabled = true
+        }
+        else {
             shakeTxt?.text = "Missing sensors!"
+            compassBtn?.isEnabled = false
+        }
 
         if (mSensorsService.hasAmbientTemperatureSensor)
             temperatureTxt?.text = "Temperature: " + mSensorsService.temperatureStatus
@@ -212,9 +239,11 @@ class MainActivity: AppCompatActivity() {
         if (mSensorsService.hasMagnetometerSensor && mSensorsService.hasAccelerometerSensor) {
             angleTxt?.text = "Angle: " + mSensorsService.angle + "º"
             directionTxt?.text = "Direction: " + mSensorsService.direction
+            compassImg?.rotation = -mSensorsService.angle.toFloat()
         } else {
             angleTxt?.text = "Missing sensors!"
             directionTxt?.text = "Missing sensors!"
+            compassImg?.rotation = 0F
         }
 
         if (mSensorsService.hasAmbientTemperatureSensor && mSensorsService.hasRelHumiditySensor)
@@ -222,10 +251,17 @@ class MainActivity: AppCompatActivity() {
         else
             sickTxt?.text = "Missing sensors!"
 
+        /*
         if (mSensorsService.hasLightSensor && mSensorsService.audioPermissions)
             sleepTxt?.text = "Sleep: The target is " + mSensorsService.sleepStatus + "."
         else
             sleepTxt?.text = "Missing sensor or\naudio permission!"
+        */
+        if (mSensorsService.hasLightSensor)
+            sleepTxt?.text = "Sleep: The target is " + mSensorsService.sleepStatus + "."
+        else
+            sleepTxt?.text = "Missing sensor"
+
 
         //runTxt.text = "Running: "
         //runPTxt.text = "Running Percentage: "
@@ -234,16 +270,92 @@ class MainActivity: AppCompatActivity() {
 
     }
 
+    private fun updateMainTxt() {
+        var mainStr = ""
+
+        if (mSensorsService.hasAmbientTemperatureSensor && mSensorsService.hasRelHumiditySensor)
+            if (mSensorsService.sick)
+                mainStr += "It is feeling sick!\n"
+        if (mSensorsService.hasAccelerometerSensor)
+            if (mSensorsService.shake)
+                mainStr += "It is feeling dizzy...\n"
+        if (mSensorsService.hasAmbientTemperatureSensor && mSensorsService.hasLightSensor) {
+            when (mSensorsService.temperatureStatus) {
+                "comfortable" -> {
+                    when (mSensorsService.sleepStatus) {
+                        "Awake" -> mainStr += "It is comfortable.\n"
+                        "Sleepy" -> mainStr += "It is feeling sleepy comfortably.\n"
+                        "Sleeping" -> mainStr += "It is feeling sleeping comfortably.\n"
+                    }
+                }
+                "hot" -> {
+                    when (mSensorsService.sleepStatus) {
+                        "Awake" -> mainStr += "It is feeling hot.\n"
+                        "Sleepy" -> mainStr += "It is feeling sleepy and hot.\n"
+                        "Sleeping" -> mainStr += "It fell asleep sweating from the heat.\n"
+                    }
+                }
+                "cold" -> {
+                    when (mSensorsService.sleepStatus) {
+                        "Awake" -> mainStr += "It is feeling cold.\n"
+                        "Sleepy" -> mainStr += "It is feeling sleepy and cold.\n"
+                        "Sleeping" -> mainStr += "It fell asleep shaking from the coldness.\n"
+                    }
+                }
+                "freezing" -> {
+                    when (mSensorsService.sleepStatus) {
+                        "Awake" -> mainStr += "It is freezing, you should really warm it up!\n"
+                        "Sleepy" -> mainStr += "It is feeling sleepy and too cold, should be " +
+                                "heated or could get sick.\n"
+                        "Sleeping" -> mainStr += "It fell asleep shaking from freezing, " +
+                                "should be heated or could get sick.\n"
+                    }
+                }
+            }
+        } else if (mSensorsService.hasAmbientTemperatureSensor) {
+            when (mSensorsService.temperatureStatus) {
+                "comfortable" -> mainStr += "It is comfortable.\n"
+                "hot" -> mainStr += "It is feeling hot.\n"
+                "cold" -> mainStr += "It is feeling cold.\n"
+                "freezing" -> mainStr += "It is freezing, you should really warm it up!\n"
+            }
+        }
+        else if (mSensorsService.hasLightSensor) {
+            when (mSensorsService.sleepStatus) {
+                "Awake" -> mainStr += "It is comfortably awake.\n"
+                "Sleepy" -> mainStr += "It is feeling sleepy.\n"
+                "Sleeping" -> mainStr += "It fell asleep.\n"
+            }
+        }
+        if (mSensorsService.hasRelHumiditySensor)
+            mainStr += "The weather is " + mSensorsService.weather + "."
+
+
+        if (mainStr.isEmpty())
+            mainTxt?.text = "There is nothing to be said about it, or sensors available."
+        else
+            mainTxt?.text = mainStr
+    }
+
+    private fun updateNaNMainTxt() {
+        mainTxt?.text = "Sensor process stopped."
+    }
+
     override fun onStop() {
         super.onStop()
         unbindService(mSensorConnection)
     }
 
+    // Home page
     private var statusCheckBox: CheckBox? = null
-    private var missingSensorsHomeTxt: TextView? = null // TODO - find a way to create a
-                                                        //  shared component!!
-    private var missingSensorsDashboardTxt: TextView? = null
-    private var missingSensorsSensorsTxt: TextView? = null
+
+    // Dashboard page
+    private var mainTxt: TextView? = null
+    private var compassImg: ImageView? = null
+    private var compassBtn: Button? = null
+    private var showingCompass: Boolean = false
+
+    // Sensors page
     private var directionTxt: TextView? = null
     private var sickTxt: TextView? = null
     private var angleTxt: TextView? = null
@@ -253,6 +365,13 @@ class MainActivity: AppCompatActivity() {
     private var lightTxt: TextView? = null
     private var sleepTxt: TextView? = null
     private var soundTxt: TextView? = null
+
+    // Shared
+    private var missingSensorsHomeTxt: TextView? = null // TODO - find a way to create a
+                                                        //  shared component!!
+    private var missingSensorsDashboardTxt: TextView? = null
+    private var missingSensorsSensorsTxt: TextView? = null
+
 
     private lateinit var binding: ActivityMainBinding
 
@@ -301,20 +420,6 @@ class MainActivity: AppCompatActivity() {
         startService(sensorServiceIntent)
         startService(activityRecognitionServiceIntent)
 
-        // Get UI data
-        statusCheckBox = binding.root.findViewById(R.id.home_service_status_bool)
-        initMissingSensorsTxt()
-        angleTxt = binding.root.findViewById(R.id.angleTxt)
-        directionTxt = binding.root.findViewById(R.id.directionTxt)
-        shakeTxt = binding.root.findViewById(R.id.shakeTxt)
-        temperatureTxt = binding.root.findViewById(R.id.temperatureTxt)
-        weatherTxt = binding.root.findViewById(R.id.weatherTxt)
-        sickTxt = binding.root.findViewById(R.id.sickTxt)
-        lightTxt = binding.root.findViewById(R.id.lightTxt)
-        sleepTxt = binding.root.findViewById(R.id.sleepTxt)
-        soundTxt = binding.root.findViewById(R.id.soundTxt)
-
-        updateNaNValues()
 
         // Listen to the variables - didn't know how to setup a listener in a right way,
         // so did a loop
@@ -326,34 +431,40 @@ class MainActivity: AppCompatActivity() {
             delay(1000L)
             while (true) {
                 try {
-                    statusCheckBox = binding.root.findViewById(R.id.home_service_status_bool)
-                    missingSensorsHomeTxt = binding.root.findViewById(R.id.missing_sensors_home)
-                    missingSensorsDashboardTxt = binding.root
-                        .findViewById(R.id.missing_sensors_dashboard)
-                    missingSensorsSensorsTxt = binding.root
-                        .findViewById(R.id.missing_sensors_sensors)
-                    angleTxt = binding.root.findViewById(R.id.angleTxt)
-                    directionTxt = binding.root.findViewById(R.id.directionTxt)
-                    shakeTxt = binding.root.findViewById(R.id.shakeTxt)
-                    temperatureTxt = binding.root.findViewById(R.id.temperatureTxt)
-                    weatherTxt = binding.root.findViewById(R.id.weatherTxt)
-                    sickTxt = binding.root.findViewById(R.id.sickTxt)
-                    lightTxt = binding.root.findViewById(R.id.lightTxt)
-                    sleepTxt = binding.root.findViewById(R.id.sleepTxt)
-                    soundTxt = binding.root.findViewById(R.id.soundTxt)
-
+                    updateCurrentUI()
                     delay(10L)
+                    // Sensor and missing sensors strings
                     if (mSensorBound && mSensorsService.running) {
-                        updateCurrentValues()
+                        updateMainTxt()
+                        updateSensorValues()
                     } else {
-                        updateNaNValues()
+                        compassBtn?.isEnabled = false
+                        updateSensorsNaNValues()
+                        updateNaNMainTxt()
+                    } // TODO - do the same for google api
+
+                    // Dashboard
+                    if (showingCompass) {
+                        mainTxt?.visibility = View.INVISIBLE
+                        compassImg?.visibility = View.VISIBLE
+                        compassBtn?.text = "Hide Compass"
                     }
-                    // TODO - do the google api
+                    else {
+                        mainTxt?.visibility = View.VISIBLE
+                        compassImg?.visibility = View.INVISIBLE
+                        compassBtn?.text = "Show Compass"
+                    }
+
                 } catch (e: Exception) {
                     println(e)
                 }
             }
         }
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun compassClick(view: View) {
+        showingCompass = !showingCompass
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -369,7 +480,7 @@ class MainActivity: AppCompatActivity() {
         *  - Audio
         * */
         mSensorsService.resumeReading()
-        updateCurrentValues()
+        updateSensorValues()
     }
 
     @Suppress("UNUSED_PARAMETER")
@@ -378,7 +489,7 @@ class MainActivity: AppCompatActivity() {
         statusCheckBox?.isChecked = false
         mSensorsService.pauseReading()
         updateMissingSensorsTxt("")
-        updateNaNValues()
+        updateSensorsNaNValues()
     }
 }
 
