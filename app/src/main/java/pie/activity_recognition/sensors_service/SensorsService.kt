@@ -299,12 +299,6 @@ class SensorsService : Service(), SensorEventListener {
                 }
                 Sensor.TYPE_LIGHT -> {
                     light = event.values[0]
-                    if (mRecorder != null &&
-                        ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                        == PackageManager.PERMISSION_GRANTED)
-                        checkSleepWAudio()
-                    else
-                        checkSleep()
                 }
             }
 
@@ -314,6 +308,12 @@ class SensorsService : Service(), SensorEventListener {
             else if (event.sensor.type == Sensor.TYPE_AMBIENT_TEMPERATURE
                 || event.sensor.type == Sensor.TYPE_RELATIVE_HUMIDITY)
                 checkAndUpdateSicknessCounter()
+
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                    == PackageManager.PERMISSION_GRANTED)
+                checkSleepWAudio()
+            else
+                checkSleep()
 
             if (mAccelerometer == null)
                 hasAccelerometerSensor = false
@@ -441,16 +441,14 @@ class SensorsService : Service(), SensorEventListener {
         if (light < 4 && sound < sleepMinDecibels && sleepStatus == "Awake") {
             sleepyElapsed = TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
             sleepStatus = "Sleepy"
-        }
-        else if (light > 4 || sound > sleepMinDecibels) {
+        } else if (light >= 4 || sound >= sleepMinDecibels) {
             sleepStatus = "Awake"
         }
-        else {
-            val currentTimeSecs = TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
-            val sleepySecs: Long = currentTimeSecs - sleepyElapsed
-            if (sleepySecs > sleepyTime && sleepStatus == "Sleepy") {
-                sleepStatus = "Sleeping"
-            }
+
+        val currentTimeSecs = TimeUnit.SECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS)
+        val sleepySecs: Long = currentTimeSecs - sleepyElapsed
+        if (sleepySecs > sleepyTime && sleepStatus == "Sleepy") {
+            sleepStatus = "Sleeping"
         }
     }
 }

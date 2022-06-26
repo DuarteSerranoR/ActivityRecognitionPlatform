@@ -40,17 +40,25 @@ class MainActivity: AppCompatActivity() {
 
 
     /*
-     * other ideas -> https://www.youtube.com/watch?v=fbj3c0LgXVI&t=97s -> downstairs, jogging, sitting, standing, upstairs, walking, biking
+     * other ideas -> https://www.youtube.com/watch?v=fbj3c0LgXVI&t=97s -> downstairs, jogging,
+     *                                              sitting, standing, upstairs, walking, biking
      *
      *
      *
-     * seat-belt -> fall detection?
+     * seat-belt -> fall and stumble detection? -> lots of papers, few algorithms. ML?
      *
      *
      * TODO -
      *  GOOGLE API (running, walking, ...)
      *  compare the weather readings, ...., with real meteorology -> gps -> temperature
      *  gps, temperature and dry humidity -> beach
+     *  HEALTH PLATFORM API (use sensors for health) ->
+     *              https://developer.android.com/training/wearables/health-services/health-platform
+     *  DEPRECATED TO HEALTH CONNECT ->
+     *              https://developer.android.com/guide/health-and-fitness/health-connect
+     *
+     * TODO - Use the sensors to stipulate the energy consumed by the user, and make a
+     *  hunger meter.
      *
      * */
 
@@ -63,7 +71,8 @@ class MainActivity: AppCompatActivity() {
         super.onStart()
         // Bind to Service
         bindService(sensorServiceIntent, mSensorConnection, Context.BIND_AUTO_CREATE)
-        bindService(activityRecognitionServiceIntent, mActivityRecognitionConnection, Context.BIND_AUTO_CREATE)
+        bindService(activityRecognitionServiceIntent, mActivityRecognitionConnection,
+            Context.BIND_AUTO_CREATE)
     }
 
     var mSensorBound = false
@@ -136,6 +145,12 @@ class MainActivity: AppCompatActivity() {
         missingSensorsSensorsTxt?.text = text
     }
 
+    private fun initMissingSensorsTxt() {
+        missingSensorsHomeTxt = binding.root.findViewById(R.id.missing_sensors_home)
+        missingSensorsDashboardTxt = binding.root.findViewById(R.id.missing_sensors_dashboard)
+        missingSensorsSensorsTxt = binding.root.findViewById(R.id.missing_sensors_sensors)
+    }
+
     @SuppressLint("SetTextI18n")
     private fun updateCurrentValues() {
 
@@ -183,7 +198,7 @@ class MainActivity: AppCompatActivity() {
             weatherTxt?.text = "Missing sensors!"
 
         if (mSensorsService.hasLightSensor)
-            lightTxt?.text = "Light: " + mSensorsService.light
+            lightTxt?.text = "Light: " + mSensorsService.light + "lux"
         else
             lightTxt?.text = "Missing sensors!"
 
@@ -225,7 +240,8 @@ class MainActivity: AppCompatActivity() {
     }
 
     private var statusCheckBox: CheckBox? = null
-    private var missingSensorsHomeTxt: TextView? = null // TODO - find a way to create a shared component!!
+    private var missingSensorsHomeTxt: TextView? = null // TODO - find a way to create a
+                                                        //  shared component!!
     private var missingSensorsDashboardTxt: TextView? = null
     private var missingSensorsSensorsTxt: TextView? = null
     private var directionTxt: TextView? = null
@@ -264,7 +280,8 @@ class MainActivity: AppCompatActivity() {
 
 
         // Permissions
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+            PackageManager.PERMISSION_GRANTED)
         {
             val permissions =
                 arrayOf(Manifest.permission.RECORD_AUDIO)
@@ -276,7 +293,8 @@ class MainActivity: AppCompatActivity() {
 
         // Services
         sensorServiceIntent = Intent(this, SensorsService::class.java)
-        activityRecognitionServiceIntent = Intent(this, ActivityRecognitionService::class.java)
+        activityRecognitionServiceIntent = Intent(this,
+            ActivityRecognitionService::class.java)
 
 
         // Start Services
@@ -285,9 +303,7 @@ class MainActivity: AppCompatActivity() {
 
         // Get UI data
         statusCheckBox = binding.root.findViewById(R.id.home_service_status_bool)
-        missingSensorsHomeTxt = binding.root.findViewById(R.id.missing_sensors_home)
-        missingSensorsDashboardTxt = binding.root.findViewById(R.id.missing_sensors_dashboard)
-        missingSensorsSensorsTxt = binding.root.findViewById(R.id.missing_sensors_sensors)
+        initMissingSensorsTxt()
         angleTxt = binding.root.findViewById(R.id.angleTxt)
         directionTxt = binding.root.findViewById(R.id.directionTxt)
         shakeTxt = binding.root.findViewById(R.id.shakeTxt)
@@ -312,8 +328,10 @@ class MainActivity: AppCompatActivity() {
                 try {
                     statusCheckBox = binding.root.findViewById(R.id.home_service_status_bool)
                     missingSensorsHomeTxt = binding.root.findViewById(R.id.missing_sensors_home)
-                    missingSensorsDashboardTxt = binding.root.findViewById(R.id.missing_sensors_dashboard)
-                    missingSensorsSensorsTxt = binding.root.findViewById(R.id.missing_sensors_sensors)
+                    missingSensorsDashboardTxt = binding.root
+                        .findViewById(R.id.missing_sensors_dashboard)
+                    missingSensorsSensorsTxt = binding.root
+                        .findViewById(R.id.missing_sensors_sensors)
                     angleTxt = binding.root.findViewById(R.id.angleTxt)
                     directionTxt = binding.root.findViewById(R.id.directionTxt)
                     shakeTxt = binding.root.findViewById(R.id.shakeTxt)
@@ -341,7 +359,7 @@ class MainActivity: AppCompatActivity() {
     @Suppress("UNUSED_PARAMETER")
     fun resumeReadings(view: View) {
         statusCheckBox?.isChecked = true
-        /* TODO
+        /*
         * Missing sensors:
         *  - Ambient Temperature
         *  - Relative Humidity
