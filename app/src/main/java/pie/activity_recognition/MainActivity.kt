@@ -491,5 +491,22 @@ class MainActivity: AppCompatActivity() {
         updateMissingSensorsTxt("")
         updateSensorsNaNValues()
     }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun factoryReset(view: View) {
+        mSensorsService.factoryReset()
+        //updateSettingsUI() TODO
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun saveSettings(view: View) {
+        TODO()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    fun resetSettings(view: View) {
+        TODO() // TODO - also use this to update the ui whenever it is opened -
+               //   reset values to current
+    }
 }
 

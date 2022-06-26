@@ -19,4 +19,8 @@
     <!-- Static Text -->
     <string name="service_status">Active</string>
     <string name="compassImgDescription">Image representing the physical compass.</string>
+    <string name="hot_temp">Hot Temp:</string>
+    <string name="cold_temp">Cold Temp:</string>
+    <string name="freezing_temp">Freezing Temp:</string>
+    <string name="temperature_regulation">Temperature Regulation</string>
 </resources>

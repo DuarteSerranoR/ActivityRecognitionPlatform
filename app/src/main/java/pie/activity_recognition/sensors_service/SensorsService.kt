@@ -32,18 +32,38 @@ class SensorsService : Service(), SensorEventListener {
 
 
 
-    // Configurations
+    // Settings
+
+    var hotTemp = hotTempConst // min degrees to be hot
+    var coldTemp = coldTempConst // max degrees to be cold (< hot)
+    var freezingTemp = freezingTempConst // max degrees to be freezing (< cold)
+    var sleepMinDecibels: Int = sleepMinDecibelsConst // Defines the minimum decibels - for it to be sleepy
+    var sleepyTime: Long = sleepyTimeConst // How long it will be sleepy before falling asleep
+    var defaultSTime = defaultSTimeConst // seconds to be sick
+    var defaultSDurationTime = defaultSDurationTimeConst // seconds while sick
+
+    fun factoryReset() {
+        hotTemp = hotTempConst
+        coldTemp = coldTempConst
+        freezingTemp = freezingTempConst
+        sleepMinDecibels = sleepMinDecibelsConst
+        sleepyTime = sleepyTimeConst
+        defaultSTime = defaultSTimeConst
+        defaultSDurationTime = defaultSDurationTimeConst
+    }
 
     companion object {
-        private const val defaultSDurationTime = 600 // seconds while sick
-        private const val defaultSTime = 120 // seconds to be sick
+        private const val hotTempConst = 25
+        private const val coldTempConst = 10
+        private const val freezingTempConst = 1
+        private const val sleepMinDecibelsConst: Int = 50
+        private const val sleepyTimeConst: Long = 20
+        private const val defaultSTimeConst = 120
+        private const val defaultSDurationTimeConst = 600
+
         private const val shakeRepNum = 35 // Duration/Delay of shake activation
-        //private const val sleepMinDecibels: Int = 60
-        private const val sleepMinDecibels: Int = 50 // Defines the minimum decibels
-        // for it to be sleepy
         //private const val sleepMinAmplitude: Int = 100 // Defines the minimum amplitude
         //                                               // for it to be sleepy
-        private const val sleepyTime: Long = 20 // How long it will be sleepy before falling asleep
 
         // For audio
         private const val sampleRate = 48000
@@ -253,11 +273,11 @@ class SensorsService : Service(), SensorEventListener {
 
                     temperatureReading = event.values[0]
 
-                    temperatureStatus = if (temperatureReading > 25)
+                    temperatureStatus = if (temperatureReading > hotTemp)
                         "hot"
-                    else if (temperatureReading < 10)
+                    else if (temperatureReading < coldTemp)
                         "cold"
-                    else if (temperatureReading < 1)
+                    else if (temperatureReading < freezingTemp)
                         "freezing"
                     else
                         "comfortable"
