@@ -1,0 +1,21 @@
+<resources>
+    <!-- App Title -->
+    <string name="app_name">Activity Platform</string>
+
+    <!-- Nav Fragments -->
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_settings">Settings</string>
+    <string name="title_sensors">Sensors</string>
+
+    <!-- Buttons -->
+    <string name="pause_btn">Pause</string>
+    <string name="start_btn">Start</string>
+    <string name="feed_btn">Feed</string>
+    <string name="save_btn">Save</string>
+    <string name="reset_btn">Reset</string>
+    <string name="factory_reset_btn">Factory Reset</string>
+
+    <!-- Static Text -->
+    <string name="service_status">Active</string>
+</resources>
