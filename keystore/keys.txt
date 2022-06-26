@@ -1,1 +1,0 @@
-Where the project keys are store for signed publishing.
