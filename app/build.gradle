@@ -8,10 +8,10 @@ android {
 
     defaultConfig {
         applicationId "pie.activity_recognition"
-        minSdk 28
+        minSdk 23
         targetSdk 32
-        versionCode 22
-        versionName "Alpha-0.2.1"
+        versionCode 24
+        versionName "Alpha-0.2.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
