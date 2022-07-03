@@ -310,12 +310,12 @@ class SensorsService : Service(), SensorEventListener {
                     val z = event.values[2]
 
                     System.arraycopy(event.values, 0, accelerometerReading, 0, accelerometerReading.size)
-                    updateOrientationAngles()
+                    //updateOrientationAngles()
                     shakeDetection(x, y, z)
                 }
                 Sensor.TYPE_MAGNETIC_FIELD -> {
                     System.arraycopy(event.values, 0, magnetometerReading, 0, magnetometerReading.size)
-                    updateOrientationAngles()
+                    //updateOrientationAngles()
                 }
                 Sensor.TYPE_LIGHT -> {
                     light = event.values[0]
